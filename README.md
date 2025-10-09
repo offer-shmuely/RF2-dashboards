@@ -1,10 +1,58 @@
 # RF2-dashboards
 
-Rotorflight 2 touch dashboards for EdgeTX/OpenTX radios
+Rotorflight2 touch dashboards for EdgeTX radios (v2.11.x)
+
+
+Note: The work is still work in progress, (and probably will always be 😉 )
+<br>
+I hope others will find it as useful as I do
+
+
+# Widgets
+
+## widget - rf2_server
+background communication widget
+
+* a must have background widget (that serve all other widget)
+* it do all the communication to the FC
+* should be installed on the topbar
+* replace the original rf2bkg script
+* replace the original rf2tlm script 
+* new technology that detect elrs custom telemetry at correct order is already built-in (so no special procedure is needed for sensor discovery)
+
+So, no need to define any scripts in special-function or custom-script anymore.
+
+![alt text](docs/img/image-1.png)
+
+
+## rf2_name
+used in single-tx-model (to many heli) configuration
+
+* display the name of the heli that currently connected (not the name of the TX model)
+* when another heli connected the name automatically change 
+
+
+## rf2_image
+used in single-tx-model (to many heli) configuration
+
+* display the image of the heli based on it's name
+* the image should exist on /IMAGES/<craft-name>.png
+* when another heli connected the image automatically change
+* it is NOT the image of the model as selected in the model-settings
+
+
+## rf2_dashboard - dashboard widget
+a dashboard of the most needed info
+* important RF2 telemetry 
+* important elrs telemetry
+
+![alt text](docs/img/image-4.png)
+
+
 
 ## Overview
 
-RF2-dashboards is a collection of Lua scripts and widgets designed to provide comprehensive telemetry dashboards for Rotorflight 2 flight controllers on EdgeTX and OpenTX radio systems. This project offers real-time monitoring of flight data with customizable touch-enabled interfaces.
+RF2-dashboards is a collection of Lua scripts and widgets designed to provide comprehensive telemetry dashboards for Rotorflight 2 flight controllers on EdgeTX radio system. This project offers real-time monitoring of flight data with customizable touch-enabled interfaces.
 
 ## Features
 
@@ -12,8 +60,7 @@ RF2-dashboards is a collection of Lua scripts and widgets designed to provide co
 - **Touch-Enabled Dashboards**: Intuitive interface designed for modern touch-screen radios
 - **Multiple Widget Support**: Modular widget system for flexible dashboard customization
 - **ELRS/CRSF Custom Telemetry**: Support for ExpressLRS custom telemetry sensors
-- **MSP Communication**: Direct communication with Rotorflight 2 via MSP protocol
-- **Blackbox Status**: Monitor blackbox recording status and capacity
+- **MSP Communication**: Direct communication with Rotorflight 2 via MSP protocol (not during the flight)
 - **Profile & Rate Display**: View current PID profile and rate profile
 - **Timer Integration**: Built-in flight timer with customizable display
 
@@ -29,9 +76,8 @@ The package includes the following widgets:
 
 ## Requirements
 
-- EdgeTX or OpenTX radio with Lua support
-- Rotorflight 2 flight controller (version 2.2.0 or compatible)
-- MSP communication link (typically via CRSF/ELRS, Crossfire, or other supported protocols)
+- Rotorflight 2 flight controller (version 2.2.0 or higher)
+- EdgeTX with color screen
 - Touch-screen display (recommended for full functionality)
 
 ## Installation
@@ -45,7 +91,7 @@ The package includes the following widgets:
 ## File Structure
 
 ```
-RF2-dashboards/
+/
 ├── SCRIPTS/
 │   └── RF2-dashboards/
 │       ├── rf2.lua               # Core RF2 library
@@ -89,7 +135,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 ## Credits
 
 - Developed for the Rotorflight community
-- Compatible with EdgeTX and OpenTX operating systems
+- Compatible with EdgeTX operating systems
 - ELRS custom telemetry integration
 
 ## Support
@@ -99,3 +145,15 @@ For issues, questions, or contributions, please visit the [GitHub repository](ht
 ## Disclaimer
 
 This software is provided "as is" without warranty of any kind. Always ensure your aircraft is safe to fly and follow all local regulations.
+
+
+---
+<br><br><br>
+
+
+# Requieremns
+* Rotorflight 2.1.x and above
+* edgeTx 2.11.x
+* color touch screen 480x272 resolution (radiomaster TX16s or similar)
+* ELRS protocol (accst is supported, but need some tweeks of the sensors names)
+* 
