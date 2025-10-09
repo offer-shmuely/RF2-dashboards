@@ -2,6 +2,10 @@
 
 Rotorflight2 touch dashboards for EdgeTX radios (v2.11.x)
 
+<img width="488" height="283" alt="image" src="https://github.com/user-attachments/assets/e64ba49f-81d0-454a-ad93-c7a7bf33ffdf" />
+<br>
+<img width="490" height="285" alt="image" src="https://github.com/user-attachments/assets/db48e464-5c2c-479f-8128-add91d624189" />
+
 
 Note: The work is still work in progress, (and probably will always be 😉 )
 <br>
