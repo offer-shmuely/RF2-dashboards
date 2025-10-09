@@ -1,0 +1,41 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Lua files
+*.lua text eol=lf
+*.luac binary
+
+# Audio files
+*.wav binary
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+
+
+# Archive files
+*.zip binary
+*.tar binary
+*.tar.gz binary
+
+# Image files (if any are added later)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.bmp binary
+*.ico binary
+*.svg text eol=lf
+
+# Exclude generated files from language statistics
+*.luac linguist-generated=true
+
+# Files and directories to exclude from exports/releases
+LICENSE export-ignore
+README.md export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+.git/ export-ignore
+
+# Only include SCRIPTS and WIDGETS directories in releases
+# (everything else is excluded by default with the rules above)
