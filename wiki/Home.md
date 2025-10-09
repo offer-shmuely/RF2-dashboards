@@ -5,13 +5,6 @@ Note: The work is still work in progress, and probably will always be 😉, but 
 ![image](https://github.com/user-attachments/assets/7a98c153-4e23-4344-b4e4-c2acba6d116c)
 
 ---
-### Rotorflight Configuration Script
-
-[RF2_touch](https://github.com/offer-shmuely/rf2-touch-suite-edgeTx/wiki/RF_touch)
-
-![image](https://github.com/user-attachments/assets/283c0318-3d70-498c-ab7a-a622f6774d95)
-
----
 ### Widgets
 
 ## [rf2_server](https://github.com/offer-shmuely/rf2-touch-suite-edgeTx/wiki/widget-rf2_server) - communication widget

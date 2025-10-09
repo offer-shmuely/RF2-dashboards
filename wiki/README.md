@@ -6,7 +6,6 @@ This wiki contains documentation for the RF2-dashboards project, a suite of LUA 
 
 - **[Home](Home.md)** - Overview and introduction to the RF2-dashboards suite
 - **[Installation](installation.md)** - Step-by-step installation instructions
-- **[RF_touch](RF_touch.md)** - Touch version of the Rotorflight setup script
 
 ### Widgets
 
