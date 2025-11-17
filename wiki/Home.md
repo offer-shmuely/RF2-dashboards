@@ -1,4 +1,4 @@
-### Rotorflight Suite of LUA scripts for EdgeTx
+### Rotorflight Dashboars scripts for EdgeTx
 
 Note: The work is still work in progress, and probably will always be 😉, but I hope others will find it as useful as I do
 
