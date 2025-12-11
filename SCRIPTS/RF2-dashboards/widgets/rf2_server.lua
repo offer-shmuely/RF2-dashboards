@@ -186,7 +186,7 @@ local function state_WAIT_FOR_CONNECTION_INIT(wgt)
 
     backgroundTask = rf2.loadScript("background.lua")()
 
-    rf2.tlmEngine = rf2.loadScript("/rfsuite/tasks/telemetry/telemetry.lua")(rf2.runningInSimulator)
+    rf2.tlmEngine = rf2.loadScript("/telemetry/telemetry.lua")(rf2.runningInSimulator)
     log("x-telemetery tlmTask: %s", rf2.tlmEngine)
     rf2.tlmEngine.init()
 
@@ -199,7 +199,7 @@ local function state_WAIT_FOR_CONNECTION(wgt)
         return
     end
 
-    log("STATE.state_WAIT_FOR_CONNECTION (is_telem on)")
+    log("STATE.state_WAIT_FOR_CONNECTION (is_telem==on)")
 
     backgroundTask()
 
@@ -369,19 +369,19 @@ local function state_RETRIVE_LIVE_INFO_INIT(wgt)
 end
 
 local function state_RETRIVE_LIVE_INFO(wgt)
-    log("STATE.RETRIVE_LIVE_INFO")
+    -- log("STATE.RETRIVE_LIVE_INFO")
 
     if rf2fc.msp.ctl.mspStatus == true
         -- and rf2fc.msp.ctl.mspBatteryState == true
         and rf2fc.msp.ctl.mspDataflash == true
     then
         rf2fc.msp.ctl.msp_rx_request = false
-        -- log("msp_rx_request: %s", rf2fc.msp.ctl.msp_rx_request)
+        -- log("[RETRIVE_LIVE_INFO] msp_rx_request: %s", rf2fc.msp.ctl.msp_rx_request)
         state = STATE.DONE_INIT
     end
 
     if (rf2.clock() - reqTS) > 10 then
-        log("hang, read again...")
+        -- log("[RETRIVE_LIVE_INFO] hang, read again...")
         state = STATE.RETRIVE_LIVE_INFO_INIT
     end
 end

@@ -2,16 +2,13 @@ local initializationDone = false
 local crsfCustomTelemetryEnabled = false
 local crsfCustomTelemetrySensors = nil
 
-local settings = {
-    useAdjustmentTeller = 1,
-}
-local useAdjustmentTeller = settings.useAdjustmentTeller == 1 or false
-
-
+-- local settings = rf2.loadSettings()
+-- local autoSetName = settings.autoSetName == 1 or false
+-- local useAdjustmentTeller = settings.useAdjustmentTeller == 1 or false
+local useAdjustmentTeller = true
 
 local sensorsDiscoveredTimeout = 0
 local hasSensor = rf2.executeScript("F/hasSensor")
-local customTelemetryTask
 local function waitForCrsfSensorsDiscovery()
     if not crossfireTelemetryPush() or rf2.runningInSimulator then
         -- Model does not use CRSF/ELRS
@@ -27,14 +24,9 @@ local function waitForCrsfSensorsDiscovery()
 
     if sensorsDiscoveredTimeout ~= 0 then
         if rf2.clock() < sensorsDiscoveredTimeout then
-            --rf2.print("Waiting for sensors to be discovered...")
-            customTelemetryTask = customTelemetryTask or assert(rf2.loadScript("rf2tlm.lua"))()
-            customTelemetryTask.run()
             return 1 -- wait for sensors to be discovered
         end
         sensorsDiscoveredTimeout = 0
-        customTelemetryTask = nil
-        collectgarbage()
         return 2 -- sensors might just have been discovered
     end
 
@@ -53,18 +45,31 @@ local function initializeQueue()
             rf2.log("API version: %s", version)
             rf2.apiVersion = version
 
+            rf2.useApi("mspName").getModelName(function(_, name) rf2.modelName = name end)
 
             if rf2.apiVersion >= 12.07 then
+                -- if not pilotConfigHasBeenSet() then
+                --     rf2.useApi("mspPilotConfig").read(onPilotConfigReceived)
+                -- end
 
-                rf2.useApi("mspTelemetryConfig").getTelemetryConfig(
-                    function(_, config)
-                        crsfCustomTelemetryEnabled = config.crsf_telemetry_mode.value == 1
-                        crsfCustomTelemetrySensors = config.crsf_telemetry_sensors
-                    end)
+                if crossfireTelemetryPush() then
+                    rf2.useApi("mspTelemetryConfig").getTelemetryConfig(
+                        function(_, config)
+                            crsfCustomTelemetryEnabled = config.crsf_telemetry_mode.value == 1
+                            if crsfCustomTelemetryEnabled then
+                                crsfCustomTelemetrySensors = config.crsf_telemetry_sensors
+                            else
+                                crsfCustomTelemetrySensors = nil
+                            end
+                        end)
+                end
             end
 
             rf2.useApi("mspSetRtc").setRtc(
                 function()
+                    --if autoSetName then
+                    --    setModelName(rf2.modelName)
+                    --end
                     playTone(1600, 300, 0, PLAY_BACKGROUND)
                     --rf2.print("RTC set")
                     rf2.mspQueue.maxRetries = 3
@@ -80,6 +85,7 @@ local function initialize(modelIsConnected)
     end
 
     if not modelIsConnected then
+        --resetModelName()
         return false
     end
 

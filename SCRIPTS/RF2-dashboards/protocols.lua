@@ -5,9 +5,11 @@ local function getProtocol()
         return "crsf"
     elseif ghostTelemetryPush() ~= nil then
         return "ghst"
+    else
+        return "---"
     end
 end
 
-local protocol = assert(getProtocol(), "Unsupported protocol!")
+local protocol = assert(getProtocol(), "Telemetry protocol\n     not supported!")
 
 return protocol

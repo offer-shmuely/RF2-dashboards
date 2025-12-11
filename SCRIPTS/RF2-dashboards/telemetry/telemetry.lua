@@ -67,6 +67,8 @@ local sensorTable = {
         name = "bat-voltage",
         stats = true,
         sourceId = "Vbat",
+        lastValue = nil,
+        lastValueMax = nil,
         sensors = {
             sim = {
                 getValue = function() return 23.0 end,
@@ -92,6 +94,8 @@ local sensorTable = {
         name = "headspeed",
         stats = true,
         sourceId = "Hspd", -- Hspd / RPM
+        lastValue = nil,
+        lastValueMax = nil,
         sensors = {
             sim = {
                 getValue = function() return 1500 end,
@@ -109,9 +113,8 @@ local sensorTable = {
     current = {
         name = "current",
         sourceId = "Curr", --???
-        -- getValue = function() return getValue("Curr") end,
-        -- getMaxValue = function() return getValue("Curr+") end,
-
+        lastValue = nil,
+        lastValueMax = nil,
         sensors = {
             sim = {
                 -- getValue = function() return math.random(0, 150) end,
@@ -138,6 +141,8 @@ local sensorTable = {
     temp_esc = {
         name = "esc_temp",
         sourceId = "Tesc", -- Tesc
+        lastValue = nil,
+        lastValueMax = nil,
         sensors = {
             sim = {
                 -- getValue = function() return math.random(0, 80) end,
@@ -165,6 +170,8 @@ local sensorTable = {
     capa = {
         name = "capacity",
         sourceId = "Capa", -- Capa
+        lastValue = nil,
+        lastValueMax = nil,
         sensors = {
             sim = {
                 getValue = function() return 1000 end,
@@ -178,6 +185,8 @@ local sensorTable = {
     -- governor = {
     --     name = "governor",
     --     sourceId = nil,
+        -- lastValue = nil,
+        -- lastValueMax = nil,
     --     sensors = {
     --         sim = { min = 0, max = 200 },
     --         sport = {
@@ -217,6 +226,8 @@ local sensorTable = {
     pid_profile = {
         name = "pid_profile",
         sourceId = "PID#",
+        lastValue = nil,
+        lastValueMax = nil,
         sensors = {
             sim = {
                 getValue = function() return 2 end,
@@ -233,6 +244,8 @@ local sensorTable = {
     rate_profile = {
         name = "rate_profile",
         sourceId = "RTE#",
+        lastValue = nil,
+        lastValueMax = nil,
         sensors = {
             sim = {
                 getValue = function() return 3 end,
@@ -251,6 +264,8 @@ local sensorTable = {
     throttle_percent = {
         name = "throttle_pct",
         sourceId = "Thr",
+        lastValue = nil,
+        lastValueMax = nil,
         sensors = {
             sim = {
                 getValue = function() return 40 end,
@@ -271,6 +286,8 @@ local sensorTable = {
     -- armdisableflags = {
     --     name = "armdisableflags",
     --     sourceId = nil,
+        -- lastValue = nil,
+        -- lastValueMax = nil,
     --     sensors = {
     --         sim = {
     --             { uid = 0x5015, unit = nil, dec = nil,
@@ -290,6 +307,8 @@ local sensorTable = {
     -- bec_voltage = {
     --     name = "bec_voltage",
     --     sourceId = nil,
+        -- lastValue = nil,
+        -- lastValueMax = nil,
     --     sensors = {
     --         sim = {
     --             { uid = 0x5017, unit = UNIT_VOLT, dec = 2,
@@ -332,97 +351,97 @@ local sensorTable = {
 }
 
 
-local function match_existing_sensor(name, key, sourceId)
-    log("x-telemetery discoverAllSensors: match_existing_sensor(name: %s, key: %s, sourceId:%s)", name, key, sourceId)
-    -- local tableExplorer = assert(loadScript("/WIDGETS/_libs/table_explorer.lua", "btd"))()
-    -- if (name ~= "rssi") then
-    --     return nil
-    -- end
+-- local function match_existing_sensor(name, key, sourceId)
+--     log("x-telemetery discoverAllSensors: match_existing_sensor(name: %s, key: %s, sourceId:%s)", name, key, sourceId)
+--     -- local tableExplorer = assert(loadScript("/WIDGETS/_libs/table_explorer.lua", "btd"))()
+--     -- if (name ~= "rssi") then
+--     --     return nil
+--     -- end
 
-    -- log("x-telemetery discoverAllSensors: matching for: %s", name)
-    for _, sensorInfo in pairs(sensorTable) do
-        -- log("x-telemetery discoverAllSensors: match? : %s", sensorInfo.name)
+--     -- log("x-telemetery discoverAllSensors: matching for: %s", name)
+--     for _, sensorInfo in pairs(sensorTable) do
+--         -- log("x-telemetery discoverAllSensors: match? : %s", sensorInfo.name)
 
-        local sensOptions = sensorInfo.sensors[protocol]
-        for _, sensor in ipairs(sensOptions) do
-            -- log("x-telemetery getFieldInfo -- " .. tableExplorer.toString(sensor))
-            -- log("x-telemetery discoverAllSensors: key: %s (? %s)", sensor.key, key)
-            if (sensor.key and sensor.key == key) then
-                log("x-telemetery discoverAllSensors: found match for: %s", sensorInfo.name)
-                sensor.sourceId = sourceId
-                return
-            end
-        end
-    end
-    return
-end
+--         local sensOptions = sensorInfo.sensors[protocol]
+--         for _, sensor in ipairs(sensOptions) do
+--             -- log("x-telemetery getFieldInfo -- " .. tableExplorer.toString(sensor))
+--             -- log("x-telemetery discoverAllSensors: key: %s (? %s)", sensor.key, key)
+--             if (sensor.key and sensor.key == key) then
+--                 log("x-telemetery discoverAllSensors: found match for: %s", sensorInfo.name)
+--                 sensor.sourceId = sourceId
+--                 return
+--             end
+--         end
+--     end
+--     return
+-- end
 
-local function discoverAllSensors()
-    if is_sim then
-        log("x-telemetery discoverAllSensors: discoverAllSensors() --> SIM (simulation mode)")
-        protocol = "sim"
-        return
-    end
-    local info = getFieldInfo("telem1")
-    if info == nil then
-        log("error: getFieldInfo(telem1) --> nil")
-        return {}
-    end
-    local firstId = info.id
+-- local function discoverAllSensors()
+--     if is_sim then
+--         log("x-telemetery discoverAllSensors: discoverAllSensors() --> SIM (simulation mode)")
+--         protocol = "sim"
+--         return
+--     end
+--     local info = getFieldInfo("telem1")
+--     if info == nil then
+--         log("error: getFieldInfo(telem1) --> nil")
+--         return {}
+--     end
+--     local firstId = info.id
 
-    --
-    for n = 0, 59, 1 do
-        local sensor = model.getSensor(n)
-        if sensor ~= nil and sensor.name ~= '' then
-            --type (number) 0 = custom, 1 = calculated
-            --name (string) Name
-            --unit (number) See list of units in the appendix of the OpenTX Lua Reference Guide
-            --prec (number) Number of decimals
-            --id (number) Only custom sensors
-            --instance (number) Only custom sensors
-            --formula (number) Only calculated sensors. 0 = Add etc. see list of formula choices in Companion popup
+--     --
+--     for n = 0, 59, 1 do
+--         local sensor = model.getSensor(n)
+--         if sensor ~= nil and sensor.name ~= '' then
+--             --type (number) 0 = custom, 1 = calculated
+--             --name (string) Name
+--             --unit (number) See list of units in the appendix of the OpenTX Lua Reference Guide
+--             --prec (number) Number of decimals
+--             --id (number) Only custom sensors
+--             --instance (number) Only custom sensors
+--             --formula (number) Only calculated sensors. 0 = Add etc. see list of formula choices in Companion popup
 
-            local sourceId = firstId + (n * 3)
-            local key = string.format("0x%04X/%d", sensor.id, sensor.instance)
-            -- log("x-telemetery5  %s, %s, prec:%s, units:%s, type:%s, sourceId: %s",sensor.name, key, sensor.prec, sensor.unit , sensor.type, sourceId)
+--             local sourceId = firstId + (n * 3)
+--             local key = string.format("0x%04X/%d", sensor.id, sensor.instance)
+--             -- log("x-telemetery5  %s, %s, prec:%s, units:%s, type:%s, sourceId: %s",sensor.name, key, sensor.prec, sensor.unit , sensor.type, sourceId)
 
-            match_existing_sensor(sensor.name, key, sourceId)
-        end
-    end
-end
+--             match_existing_sensor(sensor.name, key, sourceId)
+--         end
+--     end
+-- end
 
-function telemetry.choose_best_sensors()
-    -- local tableExplorer = assert(loadScript("/WIDGETS/_libs/table_explorer.lua", "btd"))()
+-- function telemetry.choose_best_sensors()
+--     -- local tableExplorer = assert(loadScript("/WIDGETS/_libs/table_explorer.lua", "btd"))()
 
-    -- ??? better to do with live data?
-    log("x-telemetery discoverAllSensors: choose best sensor")
-    for _, sensorInfo in pairs(sensorTable) do
-        local sensOptions = sensorInfo.sensors[protocol]
-        for _, sensor in ipairs(sensOptions) do
-            if sensorInfo.sourceId == nil then
-                if sensor.sourceId ~= nil then
-                    sensorInfo.sourceId = sensor.sourceId
-                    log("x-telemetery discoverAllSensors: found match for: %s", sensorInfo.name)
-                end
-            end
-        end
-        log("x-telemetery discoverAllSensors: choose best for: %s --> %s", sensorInfo.name, sensorInfo.sourceId)
-        -- log("x-telemetery15 best match \n%s", tableExplorer.toString(sensorInfo))
-    end
+--     -- ??? better to do with live data?
+--     log("x-telemetery discoverAllSensors: choose best sensor")
+--     for _, sensorInfo in pairs(sensorTable) do
+--         local sensOptions = sensorInfo.sensors[protocol]
+--         for _, sensor in ipairs(sensOptions) do
+--             if sensorInfo.sourceId == nil then
+--                 if sensor.sourceId ~= nil then
+--                     sensorInfo.sourceId = sensor.sourceId
+--                     log("x-telemetery discoverAllSensors: found match for: %s", sensorInfo.name)
+--                 end
+--             end
+--         end
+--         log("x-telemetery discoverAllSensors: choose best for: %s --> %s", sensorInfo.name, sensorInfo.sourceId)
+--         -- log("x-telemetery15 best match \n%s", tableExplorer.toString(sensorInfo))
+--     end
 
-    log("x-telemetery7 temp: %s-%s", getValue("EstT"), telemetry.getValue(sensorTable.temp_esc))
-    log("x-telemetery7 temp: %s-%s", getValue("EstT"), telemetry.getValue(sensorTable.temp_esc))
+--     log("x-telemetery7 temp: %s-%s", getValue("EstT"), telemetry.getValue(sensorTable.temp_esc))
+--     log("x-telemetery7 temp: %s-%s", getValue("EstT"), telemetry.getValue(sensorTable.temp_esc))
 
-    log("x-telemetery7 rssi: %s-%s", getValue("RSSI"), telemetry.getValue(sensorTable.rssi))
-    log("x-telemetery7 rssi: %s-%s", getValue("1RSS"), telemetry.getValue(sensorTable.rssi))
-    log("x-telemetery7 rssi: %s-%s", getValue("2RSS"), telemetry.getValue(sensorTable.rssi))
-    log("x-telemetery7 link_qly: %s-%s",  getValue("RQly"), telemetry.getValue(sensorTable.link_qly))
-    log("x-telemetery7 vfr: %s-%s",  getValue("VFR"), telemetry.getValue(sensorTable.link_qly))
-    log("x-telemetery7 curr: %s-%s", getValue("Curr"), telemetry.getValue(sensorTable.current))
-    log("x-telemetery7 pid_profile: %s-%s", getValue("pid_profile"), telemetry.getValue(sensorTable.pid_profile))
+--     log("x-telemetery7 rssi: %s-%s", getValue("RSSI"), telemetry.getValue(sensorTable.rssi))
+--     log("x-telemetery7 rssi: %s-%s", getValue("1RSS"), telemetry.getValue(sensorTable.rssi))
+--     log("x-telemetery7 rssi: %s-%s", getValue("2RSS"), telemetry.getValue(sensorTable.rssi))
+--     log("x-telemetery7 link_qly: %s-%s",  getValue("RQly"), telemetry.getValue(sensorTable.link_qly))
+--     log("x-telemetery7 vfr: %s-%s",  getValue("VFR"), telemetry.getValue(sensorTable.link_qly))
+--     log("x-telemetery7 curr: %s-%s", getValue("Curr"), telemetry.getValue(sensorTable.current))
+--     log("x-telemetery7 pid_profile: %s-%s", getValue("pid_profile"), telemetry.getValue(sensorTable.pid_profile))
 
-    return
-end
+--     return
+-- end
 
 
 local function searchForProtocol()
@@ -452,34 +471,37 @@ function telemetry.getSensorProtocol()
     return protocol
 end
 
-function telemetry.getValue(sensorObj)
-    if sensorObj == nil then
-        -- log("x-telemetery7  getValue() --> sensorObj is nil")
+function telemetry.getValue(objSensor)
+    if objSensor == nil then
+        -- log("x-telemetery7  getValue() --> objSensor is nil")
         return -1
     end
 
     if is_sim then
-        -- log("x-telemetery7  gerValue(%s:%s) --> SIM (simulation mode)", sensorObj.name, sensorObj.sourceId)
-        local sm = sensorObj.sensors.sim
+        -- log("x-telemetery7  gerValue(%s:%s) --> SIM (simulation mode)", objSensor.name, objSensor.sourceId)
+        local sm = objSensor.sensors.sim
         if not sm then
             return -2
         end
 
         if sm.getValue then
             local v = sm.getValue()
-            -- log("x-telemetery7  gerValue(%s:%s) --> SIM (simulation mode) = %s", sensorObj.name, sensorObj.sourceId, v)
+            -- log("x-telemetery7  gerValue(%s:%s) --> SIM (simulation mode) = %s", objSensor.name, objSensor.sourceId, v)
+            objSensor.lastValue = v
             return v
         end
         return -3
     end
 
-    local value = getValue(sensorObj.sourceId)
-    return value
+    local v = getValue(objSensor.sourceId)
+    objSensor.lastValue = v
+    return v
 end
 
 function telemetry.getValueMax(objSensor)
+
     if objSensor == nil then
-        -- log("x-telemetery7  getValueMax() --> sensorObj is nil")
+        -- log("x-telemetery7  getValueMax() --> objSensor is nil")
         return -1
     end
 
@@ -491,15 +513,22 @@ function telemetry.getValueMax(objSensor)
         end
         if sm.getValueMax then
             local v = sm.getValueMax()
-            -- log("x-telemetery7  gerValue(%s:%s) --> SIM (simulation mode) = %s", sensorObj.name, sensorObj.sourceId, v)
+            -- log("x-telemetery7  gerValue(%s:%s) --> SIM (simulation mode) = %s", objSensor.name, objSensor.sourceId, v)
+            if (v == nil or v == 0) then
+                objSensor.lastValueMax = v
+            end
             return v
         end
         return -3
     end
 
-    -- local value_max = getValue(objSensor.sourceId+2)
-    local value_max = getValue(objSensor.sourceId .. "+")
-    return value_max
+    -- local v = getValue(objSensor.sourceId+2)
+    local v = getValue(objSensor.sourceId .. "+")
+    if (v == nil or v == 0) then
+        objSensor.lastValueMax = v
+    end
+
+    return v
 end
 
 
@@ -649,40 +678,40 @@ end
         - If telemetry is not active, it returns all sensors.
         - The function considers the mandatory flag for invalid sensors.
 ]]
-function telemetry.validateSensors(returnValid)
-    local now = rfsuite.clock
-    if (now - lastValidationTime) < VALIDATION_RATE_LIMIT then
-        return lastValidationResult
-    end
-    lastValidationTime = now
+-- function telemetry.validateSensors(returnValid)
+--     local now = rfsuite.clock
+--     if (now - lastValidationTime) < VALIDATION_RATE_LIMIT then
+--         return lastValidationResult
+--     end
+--     lastValidationTime = now
 
-    if not rfsuite.session.telemetryState then
-        local allSensors = {}
-        for key, sensor in pairs(sensorTable) do
-            table.insert(allSensors, { key = key, name = sensor.name })
-        end
-        lastValidationResult = allSensors
-        return allSensors
-    end
+--     if not rfsuite.session.telemetryState then
+--         local allSensors = {}
+--         for key, sensor in pairs(sensorTable) do
+--             table.insert(allSensors, { key = key, name = sensor.name })
+--         end
+--         lastValidationResult = allSensors
+--         return allSensors
+--     end
 
-    local resultSensors = {}
-    for key, sensor in pairs(sensorTable) do
-        local sensorSource = telemetry.getSensorSource(key)
-        local isValid = (sensorSource ~= nil and sensorSource:state() ~= false)
-        if returnValid then
-            if isValid then
-                table.insert(resultSensors, { key = key, name = sensor.name })
-            end
-        else
-            if not isValid and sensor.mandatory ~= false then
-                table.insert(resultSensors, { key = key, name = sensor.name })
-            end
-        end
-    end
+--     local resultSensors = {}
+--     for key, sensor in pairs(sensorTable) do
+--         local sensorSource = telemetry.getSensorSource(key)
+--         local isValid = (sensorSource ~= nil and sensorSource:state() ~= false)
+--         if returnValid then
+--             if isValid then
+--                 table.insert(resultSensors, { key = key, name = sensor.name })
+--             end
+--         else
+--             if not isValid and sensor.mandatory ~= false then
+--                 table.insert(resultSensors, { key = key, name = sensor.name })
+--             end
+--         end
+--     end
 
-    lastValidationResult = resultSensors
-    return resultSensors
-end
+--     lastValidationResult = resultSensors
+--     return resultSensors
+-- end
 
 --[[
     Function: telemetry.simSensors
