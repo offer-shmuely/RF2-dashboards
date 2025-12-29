@@ -139,7 +139,7 @@ M.build_ui = function(wgt)
     bImageArea:rectangle({x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY})
     bImageArea:image({x=0, y=0, w=isizew, h=isizeh, fill=false,
         file=function()
-            return "/IMAGES/".. wgt.values.img_craft_name_for_image
+            return wgt.values.img_last_name
         end
     })
 
