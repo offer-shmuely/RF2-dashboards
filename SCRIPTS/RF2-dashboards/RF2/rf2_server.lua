@@ -171,7 +171,7 @@ local function create(zone, options)
         options = options
     }
     -- wgt.tools = assert(loadScript(baseDir .. "/widgets/lib_widget_tools.lua", "btd"))(nil, app_name)
-    wgt.mspCacheTools = assert(loadScript(baseDir .. "/widgets/mspCacheTools.lua", "btd"))()
+    wgt.mspCacheTools = assert(loadScript(baseDir .. "/RF2/mspCacheTools.lua", "btd"))()
     rf2fc.mspCacheTools = wgt.mspCacheTools
 
     return update(wgt, options)
@@ -350,7 +350,7 @@ local function state_RETRIVE_LIVE_INFO_INIT(wgt)
     --     rf2fc.msp.cache.mspBatteryState = ret
 
     --     -- log("MSP> mspBatteryState batteryState: %s",         rf2fc.msp.cache.mspBatteryState.batteryState)
-    --     -- log("MSP> mspBatteryState batteryCellCount: %s",     rf2fc.msp.cache.mspBatteryState.getBbatteryCellCountatteryCellCount)
+    --     -- log("MSP> mspBatteryState batteryCellCount: %s",     rf2fc.msp.cache.mspBatteryState.getBatteryCellCountatteryCellCount)
     --     -- log("MSP> mspBatteryState batteryCapacity: %s",      rf2fc.msp.cache.mspBatteryState.batteryCapacity)
     --     -- log("MSP> mspBatteryState batteryCapacityUsed: %s",  rf2fc.msp.cache.mspBatteryState.batteryCapacityUsed)
     --     -- log("MSP> mspBatteryState batteryVoltage: %s",       rf2fc.msp.cache.mspBatteryState.batteryVoltage)
@@ -428,11 +428,9 @@ local function state_DONE(wgt)
     backgroundTask()
 
     local tLastRead = rf2.clock() - reqTS
-    local intrv = rf2fc.mspCacheTools.isArmed() and interval_read_live_info_arm or interval_read_live_info_disarm
-    -- rf2.log("isArm: %s, intrv: %s", rf2fc.mspCacheTools.isArmed(), intrv)
+    local intrv = interval_read_live_info_disarm
 
     local rpm = getValue("Hspd")
-    --rpm = 1000 --?????????????????????
     if (rpm > 100) then
         log("motor running, move to on-air")
         state = STATE.ON_AIR_INIT

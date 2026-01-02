@@ -7,11 +7,18 @@ local timerNumber = 1
 
 local err_img = bitmap.open(baseDir.."widgets/img/no_connection_wr.png")
 
-local dashboard_styles = {
-    [1] = "rf2_dashboard_fancy.lua",
-    [2] = "rf2_dashboard_modern.lua",
-}
+local m_log = loadScript(baseDir.."widgets/lib_log.lua", "btd")(app_name, baseDir)
 
+local dashboard_styles = {
+    [1] = "dashboard_fancy.lua",
+    [2] = "dashboard_modern.lua",
+}
+local dashboard_post_styles = {
+    [1] = "dashboard_post_1.lua",
+    [2] = "do not replace",
+}
+local dashboard_file_name = "dashboard_none.lua"
+local dashboard_post_file_name = "dashboard_post_1.lua"
 
 local runningInSimulator = string.sub(select(2, getVersion()), -4) == "simu"
 local m_clock = function()
@@ -31,8 +38,12 @@ local wgt = {
 
         vbat = -1,
         vcel = -1,
+        vcel_min = -1,
         cell_percent = -1,
         volt = -1,
+        vbec = -1,
+        vbec_min = -1,
+        vbec_min_percent = -1,
         curr = 0,
         curr_max = 0,
         curr_str = "0",
@@ -53,16 +64,8 @@ local wgt = {
 
         link_rqly = 0,
         link_rqly_min = 0,
-        link_rqly_str = 0,
-        link_rqly_min_str = 0,
 
         -- governor_str = "-------",
-        bb_enabled = true,
-        bb_percent = 0,
-        bb_size = 0,
-        bb_txt = "Blackbox: --% 0MB",
-        rescue_on = false,
-        rescue_txt = "--",
         is_arm = false,
         arm_fail = false,
         arm_disable_flags_list = nil,
@@ -93,16 +96,21 @@ local rf2_curr_model_static_data = {
     craft_name= nil,
     cell_count = 4,
     battery_capacity = nil,
+    rescue_on = nil,
+    total_flights = nil,
+    stat_total_time = nil,
+
 }
 
 --------------------------------------------------------------
 local function log(fmt, ...)
-    print(string.format("[%s] "..fmt, app_name, ...))
+    -- print(string.format("1111[%s] "..fmt, app_name, ...))
+    m_log.info(fmt, ...)
     return
 end
 --------------------------------------------------------------
 
-local function rf2_curr_model_static_data_read()
+local function read_curr_model_static_data()
     -- update rf2_curr_model_static_data
     rf2_curr_model_static_data.msp_api_version = rf2fc.msp.cache.mspApiVersion or nil
     rf2_curr_model_static_data.craft_id         = nil -- mcu id, command=160, not implemented yet
@@ -111,11 +119,9 @@ local function rf2_curr_model_static_data_read()
     rf2_curr_model_static_data.battery_capacity = rf2fc.msp.cache.mspBatteryConfig.batteryCapacity or -1
     rf2_curr_model_static_data.rescue_on        = rf2fc.msp.cache.mspRescueProfile.mode == 1
     rf2_curr_model_static_data.total_flights    = rf2fc.msp.cache.mspFlightStats.stats_total_flights.value
+    rf2_curr_model_static_data.stats_total_time = rf2fc.msp.cache.mspFlightStats.stats_total_time_s.value
 end
 
-
--- better font size names
-local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 
 -- local function tableToString(tbl)
 --     if (tbl == nil) then return "---" end
@@ -146,8 +152,6 @@ local function dbgLayout()
     dbgy = dbgy - dh
     dbgy = math.max(0, math.min(272, dbgy))
     -- log("%sx%s", dbgx, dbgy)
-    -- lcd.drawFilledRectangle(100,100, 70,25, GREY)
-    lcd.drawText(400,0, string.format("%sx%s", dbgx, dbgy), FS.FONT_8 + WHITE)
 end
 local function dbg_pos()
     log("dbg_pos: %sx%s", dbgx, dbgy)
@@ -212,22 +216,22 @@ end
 
 -------------------------------------------------------------------
 
-local replImg = 0
-local imgTp = 0
+local dbgReplImg = 0
+local dbgImgTp = 0
 local function updateCraftName(wgt)
     local is_dbg_craft_change = false
 
     if is_dbg_craft_change == true then
-        if (m_clock() - replImg > 5) then
+        if (m_clock() - dbgReplImg > 5) then
             log("updateCraftName - interval")
-            imgTp = imgTp + 1
-            if imgTp % 2 == 0 then
+            dbgImgTp = dbgImgTp + 1
+            if dbgImgTp % 2 == 0 then
                 wgt.values.craft_name = "sab601"
             else
                 wgt.values.craft_name = "sab588"
             end
             log("updateCraftName - newCraftName: %s", wgt.values.craft_name)
-            replImg = m_clock()
+            dbgReplImg = m_clock()
         end
     else
         wgt.values.craft_name = rf2_curr_model_static_data.craft_name
@@ -242,9 +246,12 @@ end
 
 local function updateRpm(wgt)
     local val = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.rpm)
+    local val_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.rpm)
     -- local rpm_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.rpm)
     wgt.values.rpm = val
     wgt.values.rpm_str = string.format("%s",val)
+    wgt.values.rpm_max = val_max
+    wgt.values.rpm_max_str = string.format("%s",val_max)
 end
 
 local function updateProfiles(wgt)
@@ -263,7 +270,6 @@ local function updateCell(wgt)
     local vbat     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.batt_voltage)
     local vbat_min = wgt.tlmEngine.valueMin(wgt.tlmEngine.sensorTable.batt_voltage)
 
-    -- local cell_count = rf2fc.msp.cache.mspBatteryConfig.batteryCellCount or -1
     local cell_count = rf2_curr_model_static_data.cell_count or 1
 
     local vcel = cell_count > 0 and (vbat / cell_count) or 0
@@ -274,6 +280,7 @@ local function updateCell(wgt)
 
     wgt.values.vbat = vbat
     wgt.values.vcel = vcel
+    wgt.values.vcel_min = vcel_min
     wgt.values.cell_percent = batPercent
     wgt.values.volt = (wgt.options.showTotalVoltage==1) and vbat or vcel
     wgt.values.cellColor = (vcel < 3.7) and RED or lcd.RGB(0x00963A) --GREEN
@@ -295,23 +302,24 @@ end
 
 local function updateCapa(wgt)
     -- capacity
-    -- local val  = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.capa)
-    local val_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.capa)
+    local val  = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.capa)
+    -- local val = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.capa)
 
-    -- wgt.values.capaTotal = rf2fc.msp.cache.mspBatteryConfig.batteryCapacity or -1
-    wgt.values.capaTotal = rf2_curr_model_static_data.battery_capacity
-    wgt.values.capaUsed = val_max
-
-    if wgt.values.capaTotal == nil or wgt.values.capaTotal == nan or wgt.values.capaTotal ==0 then
-        wgt.values.capaTotal = -1
-        wgt.values.capaUsed = 0
-    end
+    -- log("wgt.options.reserve_capa: %s", wgt.options.reserve_capa)
+    wgt.values.capaTotal = (rf2_curr_model_static_data.battery_capacity or 0) * (100-wgt.options.reserve_capa) // 100
+    wgt.values.capaUsed = val
 
     if wgt.values.capaTotal == nil or wgt.values.capaTotal == nan or wgt.values.capaTotal ==0 then
         wgt.values.capaTotal = -1
         wgt.values.capaUsed = 0
     end
-    wgt.values.capaPercent = math.floor(100 * (wgt.values.capaTotal - wgt.values.capaUsed) // wgt.values.capaTotal)
+
+    if wgt.values.capaTotal == nil or wgt.values.capaTotal == nan or wgt.values.capaTotal ==0 then
+        wgt.values.capaTotal = -1
+        wgt.values.capaUsed = 0
+    end
+    wgt.values.capaRemain = wgt.values.capaTotal - wgt.values.capaUsed
+    wgt.values.capaPercent = math.floor(100 * wgt.values.capaRemain // wgt.values.capaTotal)
     local p = wgt.values.capaPercent
     if (p < 10) then
         wgt.values.capaColor = RED
@@ -331,68 +339,58 @@ local function updateBecVoltage(wgt)
 
     wgt.values.vbec = vbec
     wgt.values.vbec_min = vbec_min
-end
-
--- local function updateBB(wgt)
---     wgt.values.bb_enabled = wgt.mspTool.blackboxEnable()
-
---     if wgt.values.bb_enabled then
---         local blackboxInfo = wgt.mspTool.blackboxSize()
---         if blackboxInfo.totalSize > 0 then
---             wgt.values.bb_percent = math.floor(100*(blackboxInfo.usedSize/blackboxInfo.totalSize))
---         end
---         wgt.values.bb_size = math.floor(blackboxInfo.totalSize/ 1000000)
---         wgt.values.bb_txt = string.format("Blackbox: %s mb", wgt.values.bb_size)
---     end
---     wgt.values.bbColor = (wgt.values.bb_percent < 90) and lcd.RGB(0x00963A) or RED -- lcd.RGB(0x00963A) ~ GREEN
---     -- log("bb_percent: %s", wgt.values.bb_percent)
---     -- log("bb_size: %s", wgt.values.bb_size)
--- end
-
-local function updateRescue(wgt)
-    wgt.values.rescue_on = rf2_curr_model_static_data.rescue_on
-
-    -- rescue enabled?
-    wgt.values.rescue_txt = wgt.values.rescue_on and "ON" or "OFF"
-    -- -- local rescueFlip = rf2fc.msp.cache.mspRescueProfile.flip_mode == 1
-    -- -- if rescueOn then
-    -- --     txt = string.format("%s (%s)", txt, (rescueFlip) and "Flip" or "No Flip")
-    -- -- end
+    wgt.values.vbec_min_percent = math.min(100, math.floor(100 * (vbec_min / 8.4))) -- assuming 6.0v is max
 end
 
 local function updateModelStats(wgt)
     wgt.values.model_total_flights = rf2_curr_model_static_data.total_flights -- or nil
     -- log("[updateFlightStat] Total flights: [%s]", wgt.values.model_total_flights)
-    wgt.values.model_total_time = rf2fc.msp.cache.mspFlightStats.stats_total_time_s.value or 0
+    wgt.values.model_total_time = rf2_curr_model_static_data.stats_total_time or 0
     wgt.values.model_total_time_str = formatTime(wgt, {value=wgt.values.model_total_time//60})
 
 end
 
-local function updateArm1(wgt)
+local function updateFlightStage(wgt)
     wgt.values.flight_stage     = wgt.task_flight_stage.getFlightStage()
     wgt.values.flight_stage_str = wgt.task_flight_stage.getFlightStageStr()
 end
 
-local function updateArm2(wgt)
-    wgt.values.is_arm = wgt.mspTool.isArmed()
-    log("isArmed %s:", wgt.values.is_arm)
-    local flagList = wgt.mspTool.armingDisableFlagsList()
-    wgt.values.arm_disable_flags_list = flagList
+local function updateArm(wgt)
+    wgt.values.is_arm           = wgt.tlmEngine.armingToolsIsArmed()
+    wgt.values.is_arm_requested = wgt.tlmEngine.armingToolsIsArmRequested()
+    wgt.values.arm_fail = (wgt.values.is_arm_requested == true and wgt.values.is_arm == false)
+
+    -- if flags == nil then
+    --     wgt.values.arm_disable_flags_list = {}
+    --     wgt.values.arm_disable_flags_txt = "---"
+    --     wgt.values.arm_fail = false
+    --     return
+    -- end
+
+    -- flags = 0x31090186
+    -- rf2.log("disableFlags: flags:%s", flags)
+
+    wgt.values.arm_disable_flags_list = {}
     wgt.values.arm_disable_flags_txt = ""
     wgt.values.arm_fail = false
 
-    if flagList ~= nil then
+    if wgt.values.arm_fail == true then
+        local flagList = wgt.tlmEngine.armingToolsArmDisabledFlags()
+        if flagList == nil then
+            return
+        end
+
+        wgt.values.arm_disable_flags_list = flagList
+        -- wgt.values.arm_disable_flags_txt = ""
+        -- wgt.values.arm_fail = false
+
         -- log("disableFlags len: %s", #flagList)
-        if (#flagList == 0) then
-            wgt.values.arm_fail = false
-        else
-            wgt.values.arm_fail = true
+        if (#flagList > 0) then
             for i in pairs(flagList) do
                 -- log("disableFlags: %s", i)
                 -- log("disableFlags: %s", flagList[i])
                 wgt.values.arm_disable_flags_txt = wgt.values.arm_disable_flags_txt .. flagList[i] .. "\n"
             end
-
         end
     end
 end
@@ -423,12 +421,6 @@ local function updateELRS(wgt)
     wgt.values.link_rqly_min     = wgt.tlmEngine.valueMin(wgt.tlmEngine.sensorTable.link_rqly)
     wgt.values.link_tx_power     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.link_tx_power)
     wgt.values.link_tx_power_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.link_tx_power)
-
-
-    -- wgt.values.link_rqly_str     = string.format("%d%%", wgt.values.link_rqly)
-    -- wgt.values.link_rqly_min_str = string.format("%d%%", wgt.values.link_rqly_min)
-    -- wgt.values.tx_power_str = string.format("%d%%mw", wgt.values.link_tx_power)
-    -- wgt.values.tx_power_max_str = string.format("%d%%mw", wgt.values.link_tx_power_max)
 end
 
 local function updateImage(wgt)
@@ -464,15 +456,37 @@ end
 local function updateOnNoConnection()
     wgt.values.arm_disable_flags_txt = ""
     wgt.values.arm_fail = false
+    wgt.not_connected_error = "no connection to RF2 FC"
 end
 
 ---------------------------------------------------------------------------------------
+
+local function onFlightStateChanged(oldState, newState)
+    log("onFlightStateChanged: %s", newState)
+
+    if newState == wgt.task_flight_stage.FLIGHT_STATE.PRE_FLIGHT then
+        build_ui(wgt, dashboard_file_name)
+        wgt.tlmEngine.is_post_flight = false
+
+    elseif newState == wgt.task_flight_stage.FLIGHT_STATE.ON_AIR_PENDING then
+        wgt.tlmEngine.resetSensorsMinMax()
+        wgt.tlmEngine.is_post_flight = false
+
+    elseif newState == wgt.task_flight_stage.FLIGHT_STATE.ON_AIR then
+        build_ui(wgt, dashboard_file_name)
+        wgt.tlmEngine.is_post_flight = false
+
+    elseif newState == wgt.task_flight_stage.FLIGHT_STATE.POST_FLIGHT then
+        build_ui(wgt, dashboard_post_file_name)
+        wgt.tlmEngine.is_post_flight = true
+    end
+end
 
 local function update(wgt, options)
     log("update")
     if (wgt == nil) then return end
     wgt.options = options
-    wgt.not_connected_error = "Not connected"
+    updateOnNoConnection()
 
     wgt.tools = assert(loadScript(baseDir .. "/widgets/lib_widget_tools.lua", "btd"))(nil, app_name)
 
@@ -483,14 +497,21 @@ local function update(wgt, options)
     wgt.task_capa_audio = loadScript(baseDir .. "/widgets/tasks/task_capa_audio.lua", "btd")(baseDir, log, app_name)
     wgt.task_capa_audio.init()
 
-    wgt.task_flight_stage = loadScript(baseDir .. "/widgets/tasks/task_flight_stage.lua", "btd")(baseDir, log, app_name)
+    wgt.task_flight_stage = loadScript(baseDir .. "/widgets/tasks/task_flight_stage.lua", "btd")(baseDir, log, app_name, onFlightStateChanged)
     wgt.task_flight_stage.init()
 
 
     log("isFullscreen: %s", lvgl.isFullScreen())
     log("isAppMode: %s", lvgl.isAppMode())
 
-    local dashboard_file_name = dashboard_styles[wgt.options.guiStyle] or dashboard_styles[1]
+    dashboard_file_name = dashboard_styles[wgt.options.guiStyle] or dashboard_styles[1]
+    dashboard_post_file_name = dashboard_post_styles[wgt.options.guiStylePost] or dashboard_post_styles[1]
+
+    -- if user request no to replace
+    if wgt.options.guiStylePost == #dashboard_post_styles then
+        dashboard_post_file_name = dashboard_file_name
+    end
+
     if lvgl.isFullScreen() then
         dashboard_file_name = "rf2_dashboard_app_mode.lua"
     end
@@ -506,53 +527,41 @@ local function create(zone, options)
 end
 
 local function background(wgt)
+    wgt.is_connected = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.is_connected)
 
-    if wgt.tlmEngine then
-        updateTimeCount(wgt)
-        updateRpm(wgt)
-        updateProfiles(wgt)
-        updateCell(wgt)
-        updateCurr(wgt)
-        updateCapa(wgt)
-        updateBecVoltage(wgt)
-        updateThr(wgt)
-        updateTemperature(wgt)
-        updateImage(wgt)
-        updateELRS(wgt)
-        updateArm1(wgt)
+    if wgt.task_flight_stage.isOnAir() then
+        wgt.tlmEngine.updatePostFlightValues()
+
     end
+
+    updateTimeCount(wgt)
+    updateRpm(wgt)
+    updateProfiles(wgt)
+    updateCell(wgt)
+    updateCurr(wgt)
+    updateCapa(wgt)
+    updateBecVoltage(wgt)
+    updateThr(wgt)
+    updateTemperature(wgt)
+    updateImage(wgt)
+    updateELRS(wgt)
+    updateFlightStage(wgt)
+    updateArm(wgt)
 
     wgt.task_capa_audio.run(wgt)
     wgt.task_flight_stage.run(wgt)
 
-    wgt.is_connected = false
-    wgt.not_connected_error = "no RF2_Server widget found"
-    if rf2fc == nil then
+    if wgt.is_connected == false then
         updateOnNoConnection()
         return
-    else
-        if rf2fc.mspCacheTools ~= nil then
-            wgt.is_connected, wgt.not_connected_error = rf2fc.mspCacheTools.isCacheAvailable()
-            if wgt.is_connected==false then
-                -- log("Not connected---")
-                updateOnNoConnection()
-                return
-            end
-        end
     end
-    wgt.mspTool = rf2fc.mspCacheTools
 
-    --------------------------------------------------------------------------------
-    -- update rf2_curr_model_static_data
-    rf2_curr_model_static_data_read()
-    --------------------------------------------------------------------------------
 
+    ----  model static data  ----------------------------------------------------------------------------
+    read_curr_model_static_data()
 
     updateCraftName(wgt)
     -- updateGovernor(wgt)
-    -- updateBB(wgt) -- ???
-    updateRescue(wgt) --???
-    updateArm2(wgt)
     updateModelStats(wgt)
 end
 

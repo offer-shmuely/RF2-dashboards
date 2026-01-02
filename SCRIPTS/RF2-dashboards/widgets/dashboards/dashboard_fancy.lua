@@ -92,20 +92,10 @@ M.build_ui = function(wgt)
     -- bCurr:label({text=function() return wgt.values.curr_str end, x=0, y=12, font=FS.FONT_16 ,color=function() return (wgt.values.curr < 100) and YELLOW or RED end },
     bCurr:label({text=function() return wgt.values.curr_str end, x=0, y=12, font=FS.FONT_16 ,color=txtColor})
 
-
-    -- blackbox
-    -- local bBB = pMain:box({type="box", x=350, y=160, visible=function() return wgt.values.bb_enabled end})
-    -- bBB:label({text=function() return wgt.values.bb_txt end,  x=0, y=0, font=FS.FONT_6, color=function() return (wgt.values.bb_percent < 90) and titleGreyColor or RED end })
-    -- buildBlackboxHorz(bBB, wgt,
-    --     {x=0, y=18,w=110,h=20,segments_w=10, color=WHITE, bg_color=GREY, cath_w=10, cath_h=80, segments_h=20, cath=false, fence_thickness=2},
-    --     function(wgt) return wgt.values.bb_percent end,
-    --     function(wgt) return wgt.values.bbColor end
-    -- )
-    -- bBB:label({text=function() return string.format("%s%%", wgt.values.bb_percent) end, x=20, y=20, font=FS.FONT_8 ,color=WHITE})
-
     -- arm
     local bArm = pMain:box({x=140, y=5})
-    bArm:label({x=22, y=5, text=function() return wgt.values.is_arm and "ARM" or "Not Armed" end, font=FS.FONT_12 ,
+    bArm:label({x=22, y=5, font=FS.FONT_12,
+        text=function() return wgt.values.is_arm and "ARM" or "Not Armed" end,
         color=function()
             if wgt.options.guiStyle==2 then
                 return wgt.values.is_arm and RED or GREEN
@@ -114,8 +104,8 @@ M.build_ui = function(wgt)
             end
         end
     })
-    bArm:label({x=22, y=28, text=function() return wgt.values.flight_stage_str end, font=FS.FONT_8,
-        color=WHITE
+    bArm:label({x=22, y=28, color=titleGreyColor, font=FS.FONT_6,
+        text=function() return wgt.values.flight_stage_str end,
     })
 
     -- status bar

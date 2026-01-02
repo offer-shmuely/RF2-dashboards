@@ -315,6 +315,8 @@ local sensorsById  =  {
 }
 
 local function initializeSensors(ids)
+    --rf2.log("initializeSensors(%s)...", ids)
+    assert(type(ids) == "table", "initializeSensors expects a table of sensor ids")
     local data = { 0, 0, 0, 0, 0, 0, 0, 0 }
     setTelemetryValue(0xEE01, 0, 0, 0, UNIT_RAW, 0, "*Cnt")
     setTelemetryValue(0xEE02, 0, 0, 0, UNIT_RAW, 0, "*Skp")
@@ -332,12 +334,15 @@ local function initializeSensors(ids)
 end
 
 local function getSensorsBySid(ids)
+    --rf2.log("getSensorsBySid(%s)...", ids)
+    assert(type(ids) == "table", "initializeSensors expects a table of sensor ids")
     -- returns a table with sensors with an id in ids, indexed by sensor id (sid).
     -- Example: getSensorsBySid({3, 4}) would return:
     -- {
     --    [0x1011]  = { name = "Vbat",    unit = UNIT_VOLTS,               prec = 2,    dec = decU16  },
     --    [0x1012]  = { name = "Curr",    unit = UNIT_AMPS,                prec = 2,    dec = decU16  }
     -- }
+
 
     local result = {}
     for _, id in ipairs(ids) do

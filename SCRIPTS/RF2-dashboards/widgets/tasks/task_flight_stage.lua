@@ -2,6 +2,7 @@ local arg = {...}
 local baseDir = arg[1]
 local log = arg[2]
 local app_name = arg[3]
+local onFlightStateChanged = arg[4]  -- callback
 
 local M = {}
 
@@ -9,13 +10,14 @@ local M = {}
 M.FLIGHT_STATE = {
     PRE_FLIGHT = 0,
     ON_AIR = 1,
-    POST_FLIGHT = 2,
+    ON_AIR_PENDING = 2,
+    POST_FLIGHT = 3,
 }
 local state = M.FLIGHT_STATE.PRE_FLIGHT
 
 -- thresholds for state transitions
-local RPM_TAKEOFF_THRESHOLD = 500  -- RPM above which we consider the heli airborne
-local RPM_LANDING_THRESHOLD = 300  -- RPM below which we consider the heli landed
+local RPM_TAKEOFF_THRESHOLD = 100  -- RPM above which we consider the heli airborne
+local RPM_LANDING_THRESHOLD = 50   -- RPM below which we consider the heli landed
 local STATE_CHANGE_DELAY = 500  -- delay in 10ms units (500 = 5 seconds)
 
 -- state transition tracking
@@ -25,26 +27,32 @@ local landing_condition_start_time = nil
 -- state entry handlers
 local function onEnterStatePreFlight()
     log("task_flight_stage: -> pre_flight")
+    local oldState = state
     state = M.FLIGHT_STATE.PRE_FLIGHT
+    onFlightStateChanged(oldState, state)
+end
+
+local function onEnterStateOnAirPending(head_speed)
+    log("task_flight_stage: -> on_air pending (rpm: %s)", head_speed)
+    local oldState = state
+    state = M.FLIGHT_STATE.ON_AIR_PENDING
+    onFlightStateChanged(oldState, state)
 end
 
 local function onEnterStateOnAir(head_speed)
     log("task_flight_stage: -> on_air (rpm: %s)", head_speed)
+    local oldState = state
     state = M.FLIGHT_STATE.ON_AIR
-
-    log("telemetry.resetSensorsMinMax() called")
-    for i = 0, 63 do
-        model.resetSensor(i)
-    end
-    log("telemetry.resetSensorsMinMax() completed")
-
-    playFile("takeoff.wav")  -- optional audio notification
+    onFlightStateChanged(oldState, state)
+    playFile("takeoff.wav")  -- audio notification
 end
 
 local function onEnterStatePostFlight(head_speed)
     log("task_flight_stage: -> post_flight (rpm: %s)", head_speed)
+    local oldState = state
     state = M.FLIGHT_STATE.POST_FLIGHT
-    playFile("landing.wav")  -- optional audio notification
+    onFlightStateChanged(oldState, state)
+    playFile("landing.wav")  -- audio notification
 end
 
 M.init = function(wgt)
@@ -59,10 +67,11 @@ local updateStateIfNeeded = function(head_speed)
     local current_time = getTime()
 
     -- state machine transitions
-    if state == M.FLIGHT_STATE.PRE_FLIGHT or state == M.FLIGHT_STATE.POST_FLIGHT then
+    if state == M.FLIGHT_STATE.PRE_FLIGHT or state == M.FLIGHT_STATE.ON_AIR_PENDING or state == M.FLIGHT_STATE.POST_FLIGHT then
         if head_speed < RPM_TAKEOFF_THRESHOLD then
             if takeoff_condition_start_time~=nil then
                 log("task_flight_stage: takeoff aborted")
+                onEnterStatePreFlight()
             end
             takeoff_condition_start_time = nil
             return
@@ -71,6 +80,7 @@ local updateStateIfNeeded = function(head_speed)
         if takeoff_condition_start_time == nil then
             takeoff_condition_start_time = current_time
             log("task_flight_stage: takeoff condition, waiting %s seconds", STATE_CHANGE_DELAY / 100)
+            onEnterStateOnAirPending(head_speed)
             return
         end
 
@@ -110,6 +120,7 @@ end
 M.getFlightStageStr = function()
     local stateStrs = {
         [M.FLIGHT_STATE.PRE_FLIGHT]  = "Pre-Flight",
+        [M.FLIGHT_STATE.ON_AIR_PENDING] = "On Air Pending",
         [M.FLIGHT_STATE.ON_AIR]      = "On Air",
         [M.FLIGHT_STATE.POST_FLIGHT] = "Post-Flight",
     }
@@ -121,7 +132,7 @@ M.isOnAir = function()
 end
 
 M.isOnGround = function()
-    return state == M.FLIGHT_STATE.PRE_FLIGHT or state == M.FLIGHT_STATE.POST_FLIGHT
+    return state == M.FLIGHT_STATE.PRE_FLIGHT  or state == M.FLIGHT_STATE.ON_AIR_PENDING or state == M.FLIGHT_STATE.POST_FLIGHT
 end
 
 M.run = function(wgt)

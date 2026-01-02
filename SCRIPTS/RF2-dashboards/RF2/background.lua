@@ -45,13 +45,16 @@ local function run()
             rf2.print("Not initialized yet")
             return 0
         end
+        assert(initTaskResult.crsfCustomTelemetrySensors ~= nil, "crsfCustomTelemetrySensors is: nil")
         rf2.log("bg initTaskResult.crsfCustomTelemetryEnabled: %s", initTaskResult.crsfCustomTelemetryEnabled)
         if initTaskResult.crsfCustomTelemetryEnabled then
+            rf2.log("bg loading rf2tlm_sensors.lua...")
             local requestedSensorsBySid = rf2.executeScript("rf2tlm_sensors.lua", initTaskResult.crsfCustomTelemetrySensors)
-            customTelemetryTask = rf2.executeScript("rf2tlm", requestedSensorsBySid)
+            rf2.log("bg loading rf2tlm.lua...")
+            customTelemetryTask = rf2.executeScript("rf2tlm.lua", requestedSensorsBySid)
         end
         if initTask.useAdjustmentTeller then
-            adjTellerTask = rf2.executeScript("adj_teller")
+            adjTellerTask = rf2.executeScript("adj_teller.lua")
         end
         initTask = nil
         isInitialized = true

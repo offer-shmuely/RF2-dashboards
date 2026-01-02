@@ -4,23 +4,22 @@ local app_name = arg[2]
 local log = arg[3]
 
 local M = {}
--- local sensors = {}
 local protocol
 local telemetryState = false
-
+local rob_sim = true
+local NAN_VAL = -9999
+M.is_post_flight = false
 
 local sensorTable = {
-
-    -- VFR / RQly Quality
+    -- VFR / RQly
     link_rqly = {
         name = "link_rqly",
         sourceId = (protocol=="sport") and "VFR" or "RQly",
-        sensors = {
-            sim = {
-                getValue = function() return 92 end,
-                getValueMin = function() return 42 end,
-                getValueMax = function() return 100 end,
-            },
+        lastValueMin = NAN_VAL,
+        sim = {
+            getValue = function() return 92 end,
+            getValueMin = function() return 42 end,
+            getValueMax = function() return 100 end,
         },
     },
 
@@ -28,65 +27,44 @@ local sensorTable = {
     link_tx_power = {
         name = "link_tx_power",
         sourceId = "TPWR",
-        sensors = {
-            sim = {
-                getValue = function() return 25 end,
-                getValueMin = function() return 10 end,
-                getValueMax = function() return 500 end,
-            },
+        lastValueMax = NAN_VAL,
+        sim = {
+            getValue = function() return 25 end,
+            getValueMin = function() return 10 end,
+            getValueMax = function() return 500 end,
         },
     },
 
-
-    -- Arm Flags
-    armflags = {
-        name = "arming_flags",
-        sourceId = "ARMD",
-        sensors = {
-            sim = {
-                getValue = function() return 0 end,
-                getValueMax = function() return 1 end,
-            },
-        },
-        onchange = function(value)
-                if value == 1 or value == 3 then
-                    rfsuite.session.isArmed = true
-                else
-                    rfsuite.session.isArmed = false
-                end
-        end,
-    },
-
-    -- Is Armed
+    -- isArmed
     isArmed = {
         name = "is_armed",
         sourceId = "ARM",
-        sensors = {
-            sim = {
-                getValue = function() return 0 end,
-                getValueMax = function() return 1 end,
-            },
+        -- getVal = function() return getValue("ARM") end,
+        sim = {
+            getValue = function() return 0 end,
+            getValueMax = function() return 1 end,
         },
-        onchange = function(value)
-                if value == 1 or value == 3 then
-                    rfsuite.session.isArmed = true
-                else
-                    rfsuite.session.isArmed = false
-                end
-        end,
     },
 
-    -- Voltage Sensors
+    -- Arm disable flags
+    armdisableflags = {
+        name = "armdisableflags",
+        sourceId = "ARMD",
+        sim = {
+            getValue = function() return 0 end,
+            getValueMax = function() return 1 end,
+        },
+    },
+
+    -- Voltage
     batt_voltage = {
         name = "bat-voltage",
         sourceId = "Vbat",
-        lastValue = nil,
-        lastValueMax = nil,
-        sensors = {
-            sim = {
-                getValue = function() return 23.0 end,
-                getValueMax = function() return 25.6 end,
-            },
+        lastValue = NAN_VAL,
+        lastValueMin = NAN_VAL,
+        sim = {
+            getValue = function() return 23.0 end,
+            getValueMax = function() return 25.6 end,
         },
     },
 
@@ -94,74 +72,55 @@ local sensorTable = {
     bec_voltage = {
         name = "bec_voltage",
         sourceId = "Vbec",
-        lastValue = nil,
-        lastValueMax = nil,
-        sensors = {
-            sim = {
-                getValue = function() return 8.4 end,
-                getValueMin = function() return 7.2 end,
-                getValueMax = function() return 12 end,
-            },
+        lastValueMin = NAN_VAL,
+        sim = {
+            getValue = function() return 8.4 end,
+            getValueMin = function() return 7.2 end,
+            getValueMax = function() return 12 end,
         },
     },
 
-    -- -- Cell Count Sensors
+    -- -- Cell Count
     -- cell_count = {
     --     name = "cell-count",
     --     sourceId = "Cel#",
-    --     lastValue = nil,
-    --     lastValueMax = nil,
-    --     sensors = {
+    --     lastValue = NAN_VAL,
     --         sim = {
     --             getValue = function() return 3 end,
     --             getValueMax = function() return 12 end,
-    --         },
     --     },
     -- },
 
-    -- RPM Sensors
+    -- RPM
     rpm = {
         name = "headspeed",
         sourceId = "Hspd", -- Hspd / RPM
-        lastValue = nil,
-        lastValueMax = nil,
-        sensors = {
-            sim = {
-                getValue = function() return 1500 end,
-                getValueMax = function() return 1800 end,
-            },
+        lastValueMax = NAN_VAL,
+        sim = {
+            getValue = function() return 1500 end,
+            getValueMax = function() return 1800 end,
         },
     },
 
     current = {
         name = "current",
         sourceId = "Curr", --???
-        lastValue = nil,
-        lastValueMax = nil,
-        sensors = {
-            sim = {
-                -- getValue = function() return math.random(0, 150) end,
-                -- getValueMax = function() return math.random(60, 150) end,
-                getValue = function() return 40 end,
-                getValueMax = function() return 120 end,
-
-            },
+        lastValueMax = NAN_VAL,
+        sim = {
+            getValue = function() return 40 end,
+            getValueMax = function() return 120 end,
         },
     },
 
-    -- ESC Temperature Sensors
+    -- ESC Temperature
     temp_esc = {
         name = "esc_temp",
         sourceId = "Tesc", -- Tesc
-        lastValue = nil,
-        lastValueMax = nil,
-        sensors = {
-            sim = {
-                -- getValue = function() return math.random(0, 80) end,
-                -- getValueMax = function() return math.random(60, 130) end,
-                getValue = function() return 40 end,
-                getValueMax = function() return 120 end,
-            }, -- Tmp1, Tmp2, EscT
+        lastValue = NAN_VAL,
+        lastValueMax = NAN_VAL,
+        sim = {
+            getValue = function() return 40 end,
+            getValueMax = function() return 120 end,
         },
         --     if isFahrenheit then
         --         -- Convert from Celsius to Fahrenheit
@@ -174,98 +133,74 @@ local sensorTable = {
     capa = {
         name = "capacity",
         sourceId = "Capa", -- Capa
-        lastValue = nil,
-        lastValueMax = nil,
-        sensors = {
-            sim = {
-                getValue = function() return 1000 end,
-                getValueMax = function() return 1000 end,
-            },
+        lastValue = NAN_VAL,
+        sim = {
+            getValue = function() return 1000 end,
+            getValueMax = function() return 1000 end,
         },
     },
 
     -- governor = {
     --     name = "governor",
     --     sourceId = nil,
-        -- lastValue = nil,
-        -- lastValueMax = nil,
-    --     sensors = {
     --         sim = { min = 0, max = 200 },
-    --     },
     -- },
 
-    -- -- Adjustment Sensors
+    -- -- Adjustment
     -- adj_f = {
     --     name = "adj_func",
     --     sourceId = nil,
-    --     sensors = {
     --         sim = { min = 0, max = 10 },
-    --     },
     -- },
 
     -- adj_v = {
     --     name = "adj_val",
     --     sourceId = nil,
-    --     sensors = {
     --         sim = { min = 0, max = 2000 },
-    --     },
     -- },
 
     -- PID and Rate Profiles
     pid_profile = {
         name = "pid_profile",
         sourceId = "PID#",
-        lastValue = nil,
-        lastValueMax = nil,
-        sensors = {
-            sim = {
-                getValue = function() return 2 end,
-                -- getValueMax = function() return 1800 end,
-            },
+        sim = {
+            getValue = function() return 2 end,
+            -- getValueMax = function() return 1800 end,
         },
     },
 
     rate_profile = {
         name = "rate_profile",
         sourceId = "RTE#",
-        lastValue = nil,
-        lastValueMax = nil,
-        sensors = {
-            sim = {
-                getValue = function() return 3 end,
-            },
+        sim = {
+            getValue = function() return 3 end,
         },
     },
 
-    -- Throttle Sensors
+    -- Throttle
     throttle_percent = {
         name = "throttle_pct",
         sourceId = "Thr",
-        lastValue = nil,
-        lastValueMax = nil,
-        sensors = {
-            sim = {
-                getValue = function() return 40 end,
-                getValueMax = function() return 77 end,
-            },
+        lastValueMax = NAN_VAL,
+        sim = {
+            getValue = function() return 40 end,
+            getValueMax = function() return 77 end,
         },
     },
 
-    -- -- Arm Disable Flags
-    -- armdisableflags = {
-    --     name = "armdisableflags",
-    --     sourceId = nil,
-        -- lastValue = nil,
-        -- lastValueMax = nil,
-    --     sensors = {
-    --         sim = {
-    --             { uid = 0x5015, unit = nil, dec = nil,
-    --               value = function() return rfsuite.utils.simSensors('armdisableflags') end,
-    --               min = 0, max = 65536 },
-    --         },
-    --     },
-    -- },
-
+    -- virtual is connected
+    is_connected = {
+        name = "is_connected",
+        -- sourceId = "Hspd", -- Hspd / RPM
+        -- getVal = function() return getValue("Hspd") ~= nil end,
+        getVal = function() return getRSSI() ~= 0 end,
+        getValMin = function() return false end,
+        getValMax = function() return true end,
+        sim = {
+            getValue = function() return true end,
+            getValueMax = function() return true end,
+        },
+    },
 
 }
 
@@ -302,17 +237,23 @@ function M.value(objSensor)
         return -1
     end
 
-    if is_sim then
+    -- in post-flight mode, return the stored value
+    if M.is_post_flight then
+        if objSensor.lastValue ~= nil then
+            return objSensor.lastValue
+        end
+    end
+
+    if is_sim and not rob_sim then
         -- log("x-telemetery7  value(%s:%s) --> SIM (simulation mode)", objSensor.name, objSensor.sourceId)
-        local sm = objSensor.sensors.sim
-        if not sm then
+        if not objSensor.sim then
             return -2
         end
 
-        if sm.getValue then
-            local v = sm.getValue()
+        if objSensor.sim.getValue then
+            local v = objSensor.sim.getValue()
             -- log("x-telemetery7  value(%s:%s) --> SIM (simulation mode) = %s", objSensor.name, objSensor.sourceId, v)
-            objSensor.lastValue = v
+            -- objSensor.lastValue = v
             return v
         end
         return -3
@@ -323,30 +264,40 @@ function M.value(objSensor)
         sourceId = sourceId()
     end
 
-    local v = getValue(sourceId)
-    objSensor.lastValue = v
+    local v
+    if objSensor.getVal and type(objSensor.getVal) == "function" then
+        v = objSensor.getVal()
+    else
+        v = getValue(sourceId)
+    end
+    -- objSensor.lastValue = v
     return v
 end
 
 function M.valueMin(objSensor)
-
     if objSensor == nil then
-        -- log("x-telemetery  getValueMin() --> objSensor is nil")
+        log("x-telemetery  getValueMin() --> objSensor is nil")
         return -1
+    end
+
+    -- in post-flight mode, return the stored min value
+    if M.is_post_flight then
+        if objSensor.lastValueMin ~= nil then
+            return objSensor.lastValueMin
+        end
     end
 
     if is_sim then
         -- log("x-telemetery7  valueMin(%s:%s) --> SIM (simulation mode)", objSensor.name, objSensor.sourceId)
-        local sm = objSensor.sensors.sim
-        if not sm then
+        if not objSensor.sim then
             return -2
         end
-        if sm.getValueMin then
-            local v = sm.getValueMin()
+        if objSensor.sim.getValueMin then
+            local v = objSensor.sim.getValueMin()
             -- log("x-telemetery7  valueMin(%s:%s) --> SIM (simulation mode) = %s", objSensor.name, objSensor.sourceId, v)
-            if (v == nil or v == 0) then
-                objSensor.lastValueMin = v
-            end
+            -- if (v == nil or v == 0) then
+            --     objSensor.lastValueMin = v
+            -- end
             return v
         end
         return -3
@@ -357,33 +308,43 @@ function M.valueMin(objSensor)
         sourceId = sourceId()
     end
 
-    local v = getValue(sourceId .. "-")
-    if (v == nil or v == 0) then
-        objSensor.lastValueMin = v
+    local v
+    if objSensor.getValMin and type(objSensor.getValMin) == "function" then
+        v = objSensor.getValMin()
+    else
+        v = getValue(sourceId .. "-")
     end
+    -- if (v == nil or v == 0) then
+    --     objSensor.lastValueMin = v
+    -- end
 
     return v
 end
 
 function M.valueMax(objSensor)
-
     if objSensor == nil then
-        -- log("x-telemetery7  valueMax() --> objSensor is nil")
+        log("x-telemetery7  valueMax() --> objSensor is nil")
         return -1
+    end
+
+    -- in post-flight mode, return the stored max value
+    if M.is_post_flight then
+        if objSensor.lastValueMax ~= nil then
+            return objSensor.lastValueMax
+        end
     end
 
     if is_sim then
         -- log("x-telemetery7  valueMax(%s:%s) --> SIM (simulation mode)", objSensor.name, objSensor.sourceId)
-        local sm = objSensor.sensors.sim
-        if not sm then
+        if not objSensor.sim then
             return -2
         end
-        if sm.getValueMax then
-            local v = sm.getValueMax()
+        if objSensor.sim.getValueMax then
+            local v = objSensor.sim.getValueMax()
             -- log("x-telemetery7  valueMax(%s:%s) --> SIM (simulation mode) = %s", objSensor.name, objSensor.sourceId, v)
-            if (v == nil or v == 0) then
-                objSensor.lastValueMax = v
-            end
+            -- if (v == nil or v == 0) then
+            --     objSensor.lastValueMax = v
+            -- end
             return v
         end
         return -3
@@ -394,34 +355,128 @@ function M.valueMax(objSensor)
         sourceId = sourceId()
     end
 
-    local v = getValue(sourceId .. "+")
-    if (v == nil or v == 0) then
-        objSensor.lastValueMax = v
+    local v
+    if objSensor.getValMax and type(objSensor.getValMax) == "function" then
+        v = objSensor.getValMax()
+    else
+        v = getValue(sourceId .. "+")
     end
+    -- if (v == nil or v == 0) then
+    --     objSensor.lastValueMax = v
+    -- end
 
     return v
 end
 
-
-function M.simSensors()
-    local result = {}
+function M.updatePostFlightValues()
+    -- log("telemetry.updatePostFlightValues() called")
     for key, sensor in pairs(sensorTable) do
-        local name = sensor.name
-        local firstSportSensor = sensor.sensors.sim and sensor.sensors.sim[1]
-        if firstSportSensor then
-            table.insert(result, { name = name, sensor = firstSportSensor })
+        -- log("updatePostFlightValues: key=%s, name=%s, sourceId=%s", key, sensor.name, sensor.sourceId)
+        local v
+
+        if sensor.lastValue ~= nil then
+            v = M.value(sensor)
+            sensor.lastValue = v
+        end
+        if sensor.lastValueMin ~= nil then
+            v = M.valueMin(sensor)
+            if sensor.lastValueMin == NAN_VAL then
+                sensor.lastValueMin = v
+            end
+            sensor.lastValueMin = math.min(v, sensor.lastValueMin)
+        end
+        if sensor.lastValueMax ~= nil then
+            v = M.valueMax(sensor)
+            if sensor.lastValueMax == NAN_VAL then
+                sensor.lastValueMax = v
+            end
+            sensor.lastValueMax = math.max(v, sensor.lastValueMax)
+        end
+    end
+end
+
+function M.resetSensorsMinMax()
+    log("telemetry.resetSensorsMinMax() called")
+    -- for i = 0, 63 do
+    --     model.resetSensor(i)
+    -- end
+
+    log("telemetry reset lastValue to NAN_VAL")
+    for key, sensor in pairs(sensorTable) do
+        -- log(" resetting sensor: %s", sensor.name)
+        if sensor.lastValue ~= nil then
+            sensor.lastValue = NAN_VAL
+        end
+        if sensor.lastValueMin ~= nil then
+            sensor.lastValueMin = NAN_VAL
+        end
+        if sensor.lastValueMax ~= nil then
+            sensor.lastValueMax = NAN_VAL
+        end
+    end
+
+    log("telemetry.resetSensorsMinMax() completed")
+end
+
+
+function M.armingToolsIsArmed()
+    local val  = M.value(sensorTable.isArmed)
+    local is_arm = (val == 1 or val == 3)
+    -- log("isArmed: %s  (raw val: %s)", is_arm, val)
+    return is_arm
+end
+
+function M.armingToolsIsArmRequested()
+    local flags  = M.value(sensorTable.armdisableflags)
+    -- local is_arm_requested1 = bit32.band(flags, 0x2000000)
+    -- log("is_arm_requested1: %s  (raw val: 0x%X)", is_arm_requested1, flags)
+    local is_arm_requested2 = bit32.band(flags, bit32.lshift(1, 25)) ~= 0
+    -- log("is_arm_requested2: %s  (raw val: 0x%X)", is_arm_requested2, flags)
+    return is_arm_requested2
+end
+
+function M.armingToolsArmDisabledFlags()
+    local flags  = M.value(sensorTable.armdisableflags)
+    log("armdisableflags raw: 0x%X", flags)
+
+    local result = {}
+
+    local t = ""
+    for i = 0, 25 do
+        if bit32.band(flags, bit32.lshift(1, i)) ~= 0 then
+            if i == 0 then table.insert(result, "No Gyro") end
+            if i == 1 then table.insert(result, "Failsafe is active") end
+            if i == 2 then table.insert(result, "No valid receiver signal is detected") end
+            if i == 3 then table.insert(result, "The FAILSAFE switch was activated") end
+            if i == 4 then table.insert(result, "Box Fail Safe") end
+            if i == 5 then table.insert(result, "Governor") end
+            --if i == 6 then table.insert(result, "Crash Detected") end
+            if i == 7 then table.insert(result, "Throttle not idle") end
+
+            if i == 8 then table.insert(result, "Craft is not level enough") end
+            if i == 9 then table.insert(result, "Arming too soon after power on") end
+            if i == 10 then table.insert(result, "No Pre Arm") end
+            if i == 11 then table.insert(result, "System load is too high") end
+            if i == 12 then table.insert(result, "Calibrating") end
+            if i == 13 then table.insert(result, "CLI is active") end
+            if i == 14 then table.insert(result, "CMS Menu") end
+            if i == 15 then table.insert(result, "BST") end
+
+            if i == 16 then table.insert(result, "MSP connection is active") end
+            if i == 17 then table.insert(result, "Paralyze mode activate") end
+            if i == 18 then table.insert(result, "GPS") end
+            if i == 19 then table.insert(result, "Resc") end
+            if i == 20 then table.insert(result, "RPM Filter") end
+            if i == 21 then table.insert(result, "Reboot Required") end
+            if i == 22 then table.insert(result, "DSHOT Bitbang") end
+            if i == 23 then table.insert(result, "Accelerometer calibration required") end
+
+            if i == 24 then table.insert(result, "ESC/Motor Protocol not configured") end
+            -- if i == 25 then table.insert(result, "Arm Requested") end -- Arm Switch
         end
     end
     return result
 end
-
--- function M.resetSensorsMinMax()
---     log("telemetry.resetSensorsMinMax() called")
---     for i = 1, 63 do
---         model.resetSensor(i)
---     end
---     log("telemetry.resetSensorsMinMax() completed")
--- end
 
 
 --[[
@@ -436,10 +491,6 @@ end
 
 function M.init()
     protocol = searchForProtocol()
-
-    -- discoverAllSensors()
-
-    -- telemetry.choose_best_sensors()
 end
 
 -- allow sensor table to be accessed externally
