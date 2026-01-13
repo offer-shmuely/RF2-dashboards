@@ -1,5 +1,5 @@
 local app_name = "rf2_dashboard"
-local widg_dir = "/SCRIPTS/RF2-dashboards/widgets/"
+local widg_dir = "/SCRIPTS/RF2-dashboards/"
 chdir(widg_dir)
 local tool = nil
 local tool_opt = loadScript(widg_dir..app_name .. "_opt.lua", "btd")()
