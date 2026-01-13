@@ -57,7 +57,7 @@ function MspQueueController:processQueue()
 
     if self.currentMessage.postSendDelay and self.currentMessage.buf then
         if self.lastTimeCommandSent + self.currentMessage.postSendDelay > rf2.clock() then return end
-        -- rf2.log("postSendDelay expired, processing reply???")
+        -- rf2.log("postSendDelay expired, processing reply?")
         self:handleReply()
         return
     end

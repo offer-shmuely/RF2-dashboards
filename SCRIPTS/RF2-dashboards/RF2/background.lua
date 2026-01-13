@@ -45,7 +45,7 @@ local function run()
             rf2.print("Not initialized yet")
             return 0
         end
-        assert(initTaskResult.crsfCustomTelemetrySensors ~= nil, "crsfCustomTelemetrySensors is: nil")
+        -- assert(initTaskResult.crsfCustomTelemetrySensors ~= nil, "crsfCustomTelemetrySensors is: nil")
         rf2.log("bg initTaskResult.crsfCustomTelemetryEnabled: %s", initTaskResult.crsfCustomTelemetryEnabled)
         if initTaskResult.crsfCustomTelemetryEnabled then
             rf2.log("bg loading rf2tlm_sensors.lua...")

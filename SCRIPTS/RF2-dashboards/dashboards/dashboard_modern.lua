@@ -1,12 +1,15 @@
-local app_name = "RF2-dashboards"
-
-local baseDir = "/SCRIPTS/RF2-dashboards/"
-local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
+local arg = {...}
+local log = arg[1]
+local app_name = arg[2]
+local baseDir = arg[3]
+local tools = arg[4]
+local statusbar = arg[5]
+local inSimu = arg[6]
 
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 
-local lib_blackbox_horz = assert(loadScript(baseDir .. "/widgets/parts/blackbox_horz.lua", "btd"))()
+local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
 
 local M = {}
 
@@ -120,26 +123,14 @@ M.build_ui = function(wgt)
     bTemp:arc({x=50, y=50, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_max_percent) end, color=lcd.RGB(0x1F96C2), opacity=180})
     bTemp:arc({x=50, y=50, radius=g_rad,  thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_percent)     end, color=lcd.RGB(0x1F96C2)})
 
-
-    -- status bar
-    local bStatusBar = pMain:box({x=0, y=wgt.zone.h-20})
-    local statusBarColor = lcd.RGB(0x0078D4)
-    bStatusBar:rectangle({x=0, y=0,w=wgt.zone.w, h=20, color=statusBarColor, filled=true})
-    bStatusBar:rectangle({x=25, y=0,w=70, h=20, color=RED, filled=true, visible=function() return (wgt.values.link_rqly < 80) end })
-    bStatusBar:label({x=3  , y=2, text=function() return string.format("elrs RQly-: %s%%", wgt.values.link_rqly_min) end, font=function() return (wgt.values.link_rqly >= 80) and FS.FONT_6 or FS.FONT_6  end, color=WHITE})
-    bStatusBar:label({x=120, y=2, text=function() return string.format("TPwr+: %smw", wgt.values.link_tx_power_max) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=230, y=2, text=function() return string.format("VBec-: %sv", wgt.values.vbec_min) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=300, y=2, text=function() return string.format("Thr+: %s%%", wgt.values.thr_max) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=380, y=2, text="VenbS & Shmuely", font=FS.FONT_6, color=YELLOW})
-
     -- image
     local isizew=150
     local isizeh=100
     local bImageArea = pMain:box({x=330, y=5})
-    bImageArea:rectangle({x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY})
+    -- bImageArea:rectangle({x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY})
     bImageArea:image({x=0, y=0, w=isizew, h=isizeh, fill=false,
         file=function()
-            return "/IMAGES/".. wgt.values.img_craft_name_for_image
+            return wgt.values.img_craft_image_name
         end
     })
 
@@ -179,11 +170,33 @@ M.build_ui = function(wgt)
     pMain:build({{type="box", x=330, y=10, visible=function() return wgt.is_connected==false end,
         children={
             {type="rectangle", x=5, y=10, w=isizew-10, h=isizeh-20, rounded=15, filled=true, opacity=250, color=BLACK},
-            {type="image", x=30, y=0, w=90, h=90, file=baseDir.."widgets/img/no_connection_wr.png"},
+            {type="image", x=30, y=0, w=90, h=90, file=baseDir.."/img/no_connection_wr.png"},
             {type="label", x=10, y=70, text=function() return wgt.not_connected_error end , font=FS.FONT_8, color=WHITE},
         }
     }})
 
+
+    -- app_ver
+    pMain:build({{type="box", x=LCD_W -50, y=LCD_H -80,
+        children={
+            {type="label", text=function() return string.format("v: %s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
+        }
+    }})
+
+    -- status bar
+    wgt.statusbar.init("VenbS & Shmuely", {
+        {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, error_color=RED, error_cond=function() return (wgt.values.link_rqly < 80) end },
+        {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.vbec,        wgt.values.vbec_min     ) end, color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.bec_voltage.isWarn() end },
+        {name="Curr+:", ftxt=function() return string.format("A: %d/%dA",           wgt.values.curr,        wgt.values.curr_max     ) end},
+        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smW",         wgt.values.link_tx_power_max                    ) end},
+        {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end},
+    })
+    wgt.statusbar.build_ui(pMain, wgt)
+
+end
+
+M.refresh = function(wgt, event, touchState)
+    wgt.statusbar.refresh()
 end
 
 return M

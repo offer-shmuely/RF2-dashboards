@@ -127,12 +127,20 @@ M.getFlightStageStr = function()
     return stateStrs[state] or "---"
 end
 
+M.isOnPreFlight = function()
+    return state == M.FLIGHT_STATE.PRE_FLIGHT
+end
+
 M.isOnAir = function()
     return state == M.FLIGHT_STATE.ON_AIR
 end
 
 M.isOnGround = function()
     return state == M.FLIGHT_STATE.PRE_FLIGHT  or state == M.FLIGHT_STATE.ON_AIR_PENDING or state == M.FLIGHT_STATE.POST_FLIGHT
+end
+
+M.isPostFlight = function()
+    return state == M.FLIGHT_STATE.POST_FLIGHT
 end
 
 M.run = function(wgt)

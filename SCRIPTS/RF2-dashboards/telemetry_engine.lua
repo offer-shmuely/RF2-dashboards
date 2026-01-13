@@ -1,25 +1,30 @@
 local arg = {...}
-local is_sim = arg[1]
+local log = arg[1]
 local app_name = arg[2]
-local log = arg[3]
+local is_sim = arg[3]
 
 local M = {}
 local protocol
 local telemetryState = false
 local rob_sim = true
-local NAN_VAL = -9999
+local NAN_VAL = 111
 M.is_post_flight = false
 
-local sensorTable = {
+local sensorTable
+
+sensorTable = {
     -- VFR / RQly
     link_rqly = {
         name = "link_rqly",
         sourceId = (protocol=="sport") and "VFR" or "RQly",
         lastValueMin = NAN_VAL,
+        update_sim = function(sensor)
+            if sensor.lastValueMin == NAN_VAL then
+                sensor.lastValueMin = 42
+            end
+        end,
         sim = {
             getValue = function() return 92 end,
-            getValueMin = function() return 42 end,
-            getValueMax = function() return 100 end,
         },
     },
 
@@ -28,10 +33,13 @@ local sensorTable = {
         name = "link_tx_power",
         sourceId = "TPWR",
         lastValueMax = NAN_VAL,
+        update_sim = function(sensor)
+            if sensor.lastValueMax == NAN_VAL then
+                sensor.lastValueMax = 100
+            end
+        end,
         sim = {
             getValue = function() return 25 end,
-            getValueMin = function() return 10 end,
-            getValueMax = function() return 500 end,
         },
     },
 
@@ -42,7 +50,6 @@ local sensorTable = {
         -- getVal = function() return getValue("ARM") end,
         sim = {
             getValue = function() return 0 end,
-            getValueMax = function() return 1 end,
         },
     },
 
@@ -52,7 +59,6 @@ local sensorTable = {
         sourceId = "ARMD",
         sim = {
             getValue = function() return 0 end,
-            getValueMax = function() return 1 end,
         },
     },
 
@@ -62,9 +68,13 @@ local sensorTable = {
         sourceId = "Vbat",
         lastValue = NAN_VAL,
         lastValueMin = NAN_VAL,
+        update_sim = function(sensor)
+            if sensor.lastValueMin == NAN_VAL then
+                sensor.lastValueMin = 23.0
+            end
+        end,
         sim = {
             getValue = function() return 23.0 end,
-            getValueMax = function() return 25.6 end,
         },
     },
 
@@ -73,11 +83,24 @@ local sensorTable = {
         name = "bec_voltage",
         sourceId = "Vbec",
         lastValueMin = NAN_VAL,
-        sim = {
-            getValue = function() return 8.4 end,
-            getValueMin = function() return 7.2 end,
-            getValueMax = function() return 12 end,
-        },
+        lastValueMax = NAN_VAL,
+        isWarn = function()
+            -- local v = sensorTable.bec_voltage.lastValueMin
+            local dv = sensorTable.bec_voltage.lastValueMax - sensorTable.bec_voltage.lastValueMin
+            if dv > 0.9 then
+                log("bec_voltage.isWarn() called, dv=%s (min: %s, max: %s)", dv, sensorTable.bec_voltage.lastValueMin, sensorTable.bec_voltage.lastValueMax)
+                return true
+            end
+            -- log("bec_voltage.isWarn() called, v=%s", v)
+            -- return v < 8.6
+            return false
+        end,
+        update_sim = function(sensor)
+            if sensor.lastValueMin == NAN_VAL then
+                sensor.lastValueMin = 7.2
+                sensor.lastValueMax = 7.2
+            end
+        end,
     },
 
     -- -- Cell Count
@@ -85,10 +108,6 @@ local sensorTable = {
     --     name = "cell-count",
     --     sourceId = "Cel#",
     --     lastValue = NAN_VAL,
-    --         sim = {
-    --             getValue = function() return 3 end,
-    --             getValueMax = function() return 12 end,
-    --     },
     -- },
 
     -- RPM
@@ -96,19 +115,27 @@ local sensorTable = {
         name = "headspeed",
         sourceId = "Hspd", -- Hspd / RPM
         lastValueMax = NAN_VAL,
+        update_sim = function(sensor)
+            if sensor.lastValueMax == NAN_VAL then
+                sensor.lastValueMax = 1800
+            end
+        end,
         sim = {
             getValue = function() return 1500 end,
-            getValueMax = function() return 1800 end,
         },
     },
 
     current = {
         name = "current",
-        sourceId = "Curr", --???
+        sourceId = "Curr",
         lastValueMax = NAN_VAL,
+        update_sim = function(sensor)
+            if sensor.lastValueMax == NAN_VAL then
+                sensor.lastValueMax = 115
+            end
+        end,
         sim = {
             getValue = function() return 40 end,
-            getValueMax = function() return 120 end,
         },
     },
 
@@ -118,9 +145,13 @@ local sensorTable = {
         sourceId = "Tesc", -- Tesc
         lastValue = NAN_VAL,
         lastValueMax = NAN_VAL,
+        update_sim = function(sensor)
+            if sensor.lastValueMax == NAN_VAL then
+                sensor.lastValueMax = 120
+            end
+        end,
         sim = {
             getValue = function() return 40 end,
-            getValueMax = function() return 120 end,
         },
         --     if isFahrenheit then
         --         -- Convert from Celsius to Fahrenheit
@@ -136,7 +167,6 @@ local sensorTable = {
         lastValue = NAN_VAL,
         sim = {
             getValue = function() return 1000 end,
-            getValueMax = function() return 1000 end,
         },
     },
 
@@ -165,7 +195,6 @@ local sensorTable = {
         sourceId = "PID#",
         sim = {
             getValue = function() return 2 end,
-            -- getValueMax = function() return 1800 end,
         },
     },
 
@@ -182,23 +211,22 @@ local sensorTable = {
         name = "throttle_pct",
         sourceId = "Thr",
         lastValueMax = NAN_VAL,
-        sim = {
-            getValue = function() return 40 end,
-            getValueMax = function() return 77 end,
-        },
+        update_sim = function(sensor)
+            if sensor.lastValueMax == NAN_VAL then
+                sensor.lastValueMax = 76
+            end
+        end,
     },
 
     -- virtual is connected
     is_connected = {
         name = "is_connected",
-        -- sourceId = "Hspd", -- Hspd / RPM
-        -- getVal = function() return getValue("Hspd") ~= nil end,
+        -- sourceId = "",
         getVal = function() return getRSSI() ~= 0 end,
-        getValMin = function() return false end,
-        getValMax = function() return true end,
+        -- getValMin = function() return false end,
+        -- getValMax = function() return true end,
         sim = {
             getValue = function() return true end,
-            getValueMax = function() return true end,
         },
     },
 
@@ -249,14 +277,13 @@ function M.value(objSensor)
         if not objSensor.sim then
             return -2
         end
-
-        if objSensor.sim.getValue then
-            local v = objSensor.sim.getValue()
-            -- log("x-telemetery7  value(%s:%s) --> SIM (simulation mode) = %s", objSensor.name, objSensor.sourceId, v)
-            -- objSensor.lastValue = v
-            return v
+        if not objSensor.sim.getValue then
+            return -3
         end
-        return -3
+
+        local v = objSensor.sim.getValue()
+        -- log("x-telemetery7  value(%s:%s) --> SIM (simulation mode) = %s", objSensor.name, objSensor.sourceId, v)
+        return v
     end
 
     local sourceId = objSensor.sourceId
@@ -280,45 +307,9 @@ function M.valueMin(objSensor)
         return -1
     end
 
-    -- in post-flight mode, return the stored min value
-    if M.is_post_flight then
-        if objSensor.lastValueMin ~= nil then
-            return objSensor.lastValueMin
-        end
-    end
+    if objSensor.lastValueMin == nil then return -3 end
 
-    if is_sim then
-        -- log("x-telemetery7  valueMin(%s:%s) --> SIM (simulation mode)", objSensor.name, objSensor.sourceId)
-        if not objSensor.sim then
-            return -2
-        end
-        if objSensor.sim.getValueMin then
-            local v = objSensor.sim.getValueMin()
-            -- log("x-telemetery7  valueMin(%s:%s) --> SIM (simulation mode) = %s", objSensor.name, objSensor.sourceId, v)
-            -- if (v == nil or v == 0) then
-            --     objSensor.lastValueMin = v
-            -- end
-            return v
-        end
-        return -3
-    end
-
-    local sourceId = objSensor.sourceId
-    if type(sourceId) == "function" then
-        sourceId = sourceId()
-    end
-
-    local v
-    if objSensor.getValMin and type(objSensor.getValMin) == "function" then
-        v = objSensor.getValMin()
-    else
-        v = getValue(sourceId .. "-")
-    end
-    -- if (v == nil or v == 0) then
-    --     objSensor.lastValueMin = v
-    -- end
-
-    return v
+    return objSensor.lastValueMin
 end
 
 function M.valueMax(objSensor)
@@ -327,76 +318,52 @@ function M.valueMax(objSensor)
         return -1
     end
 
-    -- in post-flight mode, return the stored max value
-    if M.is_post_flight then
-        if objSensor.lastValueMax ~= nil then
-            return objSensor.lastValueMax
-        end
-    end
+    if objSensor.lastValueMax == nil then return -3 end
 
-    if is_sim then
-        -- log("x-telemetery7  valueMax(%s:%s) --> SIM (simulation mode)", objSensor.name, objSensor.sourceId)
-        if not objSensor.sim then
-            return -2
-        end
-        if objSensor.sim.getValueMax then
-            local v = objSensor.sim.getValueMax()
-            -- log("x-telemetery7  valueMax(%s:%s) --> SIM (simulation mode) = %s", objSensor.name, objSensor.sourceId, v)
-            -- if (v == nil or v == 0) then
-            --     objSensor.lastValueMax = v
-            -- end
-            return v
-        end
-        return -3
-    end
-
-    local sourceId = objSensor.sourceId
-    if type(sourceId) == "function" then
-        sourceId = sourceId()
-    end
-
-    local v
-    if objSensor.getValMax and type(objSensor.getValMax) == "function" then
-        v = objSensor.getValMax()
-    else
-        v = getValue(sourceId .. "+")
-    end
-    -- if (v == nil or v == 0) then
-    --     objSensor.lastValueMax = v
-    -- end
-
-    return v
+    return objSensor.lastValueMax
 end
 
 function M.updatePostFlightValues()
     -- log("telemetry.updatePostFlightValues() called")
     for key, sensor in pairs(sensorTable) do
         -- log("updatePostFlightValues: key=%s, name=%s, sourceId=%s", key, sensor.name, sensor.sourceId)
-        local v
+        local v = M.value(sensor)
 
         if sensor.lastValue ~= nil then
-            v = M.value(sensor)
             sensor.lastValue = v
         end
+
         if sensor.lastValueMin ~= nil then
-            v = M.valueMin(sensor)
-            if sensor.lastValueMin == NAN_VAL then
-                sensor.lastValueMin = v
+            -- log("updateMin [%s] %s?=%s --> %s (v: %s)", sensor.name, sensor.lastValueMin, NAN_VAL, (sensor.lastValueMin == NAN_VAL), v)
+            if v ~= NAN_VAL then
+                if sensor.lastValueMin == NAN_VAL then
+                    sensor.lastValueMin = v
+                else
+                    sensor.lastValueMin = math.min(v, sensor.lastValueMin)
+                end
             end
-            sensor.lastValueMin = math.min(v, sensor.lastValueMin)
         end
+
         if sensor.lastValueMax ~= nil then
-            v = M.valueMax(sensor)
             if sensor.lastValueMax == NAN_VAL then
                 sensor.lastValueMax = v
+            else
+                sensor.lastValueMax = math.max(v, sensor.lastValueMax)
             end
-            sensor.lastValueMax = math.max(v, sensor.lastValueMax)
         end
+
+        -- if sensor.update ~= nil then
+        --     sensor.update(sensor)
+        -- end
+        if is_sim and sensor.update_sim ~= nil then
+            sensor.update_sim(sensor)
+        end
+
     end
 end
 
 function M.resetSensorsMinMax()
-    log("telemetry.resetSensorsMinMax() called")
+    -- log("telemetry.resetSensorsMinMax() called")
     -- for i = 0, 63 do
     --     model.resetSensor(i)
     -- end
@@ -415,7 +382,7 @@ function M.resetSensorsMinMax()
         end
     end
 
-    log("telemetry.resetSensorsMinMax() completed")
+    -- log("telemetry.resetSensorsMinMax() completed")
 end
 
 

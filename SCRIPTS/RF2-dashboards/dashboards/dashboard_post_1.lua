@@ -1,13 +1,17 @@
-local app_name = "RF2-dashboards"
+local arg = {...}
+local log = arg[1]
+local app_name = arg[2]
+local baseDir = arg[3]
+local tools = arg[4]
+local statusbar = arg[5]
+local inSimu = arg[6]
 
-local baseDir = "/SCRIPTS/RF2-dashboards/"
-local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
 
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 
-local lib_blackbox_horz = assert(loadScript(baseDir .. "/widgets/parts/blackbox_horz.lua", "btd"))()
-local lib_post_arc = assert(loadScript(baseDir .. "/widgets/parts/post_arc.lua", "btd"))()
+local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
+local lib_post_arc = assert(loadScript(baseDir .. "/parts/post_arc.lua", "btd"))()
 
 local M = {}
 
@@ -126,11 +130,21 @@ M.build_ui = function(wgt)
     local statusBarColor = lcd.RGB(0x0078D4)
     bStatusBar:rectangle({x=0, y=0,w=wgt.zone.w, h=20, color=statusBarColor, filled=true})
     bStatusBar:rectangle({x=25, y=0,w=70, h=20, color=RED, filled=true, visible=function() return (wgt.values.link_rqly < 80) end })
-    bStatusBar:label({x=3  , y=2, text=function() return string.format("elrs RQly-: %s%%", wgt.values.link_rqly_min) end, font=function() return (wgt.values.link_rqly >= 80) and FS.FONT_6 or FS.FONT_6  end, color=WHITE})
+    bStatusBar:label({x=3  , y=2, text=function() return string.format("LQ-: %s%%", wgt.values.link_rqly_min) end, font=function() return (wgt.values.link_rqly >= 80) and FS.FONT_6 or FS.FONT_6  end, color=WHITE})
     bStatusBar:label({x=120, y=2, text=function() return string.format("TPwr+: %smw", wgt.values.link_tx_power_max) end, font=FS.FONT_6, color=WHITE})
     bStatusBar:label({x=230, y=2, text=function() return string.format("VBec-: %sv", wgt.values.vbec_min) end, font=FS.FONT_6, color=WHITE})
     bStatusBar:label({x=300, y=2, text=function() return string.format("Thr+: %s%%", wgt.values.thr_max) end, font=FS.FONT_6, color=WHITE})
     bStatusBar:label({x=380, y=2, text="Shmuely", font=FS.FONT_6, color=YELLOW})
+
+    wgt.statusbar.init("Shmuely", {
+        {name="RQly-:", ftxt=function() return string.format("RQly-: %s%%", wgt.values.link_rqly_min) end, color=GREEN, error_color=RED, error_cond=function() return (wgt.values.link_rqly < 80) end },
+        {name="VBec-:", ftxt=function() return string.format("VBec-: %sV",  wgt.values.vbec_min) end, color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.bec_voltage.isWarn() end },
+        {name="Curr+:", ftxt=function() return string.format("Curr+: %sV",  wgt.values.curr_max) end},
+        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw", wgt.values.link_tx_power_max) end},
+        {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",  wgt.values.thr_max) end},
+    })
+    wgt.statusbar.build_ui(pMain, wgt)
+
 
     -- image
     local isizew=150
@@ -139,7 +153,7 @@ M.build_ui = function(wgt)
     bImageArea:rectangle({x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY})
     bImageArea:image({x=0, y=0, w=isizew, h=isizeh, fill=false,
         file=function()
-            return "/IMAGES/".. wgt.values.img_craft_name_for_image
+            return wgt.values.img_craft_image_name
         end
     })
 
@@ -179,7 +193,7 @@ M.build_ui = function(wgt)
     -- pMain:build({{type="box", x=330, y=10, visible=function() return wgt.is_connected==false end,
     --     children={
     --         {type="rectangle", x=5, y=10, w=isizew-10, h=isizeh-20, rounded=15, filled=true, opacity=250, color=BLACK},
-    --         {type="image", x=30, y=0, w=90, h=90, file=baseDir.."widgets/img/no_connection_wr.png"},
+    --         {type="image", x=30, y=0, w=90, h=90, file=baseDir.."/img/no_connection_wr.png"},
     --         {type="label", x=10, y=70, text=function() return wgt.not_connected_error end , font=FS.FONT_8, color=WHITE},
     --     }
     -- }})

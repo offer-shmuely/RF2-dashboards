@@ -1,5 +1,5 @@
 local app_name = "rf2_server"
-local baseDir = "/SCRIPTS/RF2-dashboards/"
+local baseDir = "/SCRIPTS/RF2-dashboards"
 
 rf2fc = {
     mspCacheTools = nil,
@@ -106,7 +106,7 @@ loadScript(baseDir.."/RF2/rf2.lua", "btd")()
 rf2.enable_serial_debug = true
 
 
-local image_file = baseDir.."/widgets/img/rf2_logo3.png"
+local image_file = baseDir.."/img/rf2_logo3.png"
 
 --------------------------------------------------------------
 local function log(fmt, ...)
@@ -170,7 +170,6 @@ local function create(zone, options)
         zone = zone,
         options = options
     }
-    -- wgt.tools = assert(loadScript(baseDir .. "/widgets/lib_widget_tools.lua", "btd"))(nil, app_name)
     wgt.mspCacheTools = assert(loadScript(baseDir .. "/RF2/mspCacheTools.lua", "btd"))()
     rf2fc.mspCacheTools = wgt.mspCacheTools
 
@@ -455,7 +454,6 @@ local function state_ON_AIR(wgt)
     -- fictive update time to avoid disconnection while on air
     rf2fc.msp.ctl.lastUpdateTime = rf2.clock()
     local rpm = getValue("Hspd")
-    --rpm = 1000 --?????????????????????
     if (rpm < 100) then
         log("landed, back to DONE")
         state = STATE.DONE_INIT
@@ -489,7 +487,6 @@ local function background(wgt)
         rf2.mspQueue:processQueue()
     end
 
-    -- log("STATE.???")
     if state == STATE.STARTING then
         return state_STARTING()
 

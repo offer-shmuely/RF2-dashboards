@@ -1,13 +1,14 @@
 local app_name = "RF2-dashboards"
+local app_ver = "2.2.13"
 
-local baseDir = "/SCRIPTS/RF2-dashboards/"
+local baseDir = "/SCRIPTS/RF2-dashboards"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
 
 local timerNumber = 1
 
-local err_img = bitmap.open(baseDir.."widgets/img/no_connection_wr.png")
+local err_img = bitmap.open(baseDir.."/img/no_connection_wr.png")
 
-local m_log = loadScript(baseDir.."widgets/lib_log.lua", "btd")(app_name, baseDir)
+local m_log = loadScript(baseDir.."/lib_log.lua", "btd")(app_name, baseDir)
 
 local dashboard_styles = {
     [1] = "dashboard_fancy.lua",
@@ -15,17 +16,19 @@ local dashboard_styles = {
 }
 local dashboard_post_styles = {
     [1] = "dashboard_post_1.lua",
-    [2] = "do not replace",
+    [2] = "dashboard_post_2.lua",
 }
 local dashboard_file_name = "dashboard_none.lua"
 local dashboard_post_file_name = "dashboard_post_1.lua"
+local curr_dashboard = nil
 
 local runningInSimulator = string.sub(select(2, getVersion()), -4) == "simu"
-local m_clock = function()
+local function m_clock()
     return getTime() / 100
 end
 
 local wgt = {
+    app_ver = app_ver,
     values = {
         craft_name = "-----",
         timer_str = "--:--",
@@ -73,12 +76,8 @@ local wgt = {
         flight_stage = -1,
         flight_stage_str = "---",
 
-        img_last_name = "---",
-        img_craft_name_for_image = "---",
-        img_box_1 = nil,
-        img_replacment_area1 = nil,
-        img_box_2 = nil,
-        img_replacment_area2 = nil,
+        img_last_key = "---",
+        img_craft_image_name = "---",
 
         thr = 0,
         thr_max = 0,
@@ -202,9 +201,9 @@ local function formatTime(wgt, t1)
     return time_str, isNegative
 end
 
-local build_ui = function(wgt, file_name)
-    local ui_lib = assert(loadScript(baseDir .. "/widgets/dashboards/" ..file_name, "btd"))()
-    ui_lib.build_ui(wgt)
+local function build_ui(wgt, file_name)
+    curr_dashboard = assert(loadScript(baseDir .. "/dashboards/" ..file_name, "btd")(m_log.info, app_name, baseDir , wgt.tools, wgt.statusbar, inSimu))
+    curr_dashboard.build_ui(wgt)
 end
 
 -------------------------------------------------------------------
@@ -228,9 +227,9 @@ local function updateCraftName(wgt)
             if dbgImgTp % 2 == 0 then
                 wgt.values.craft_name = "sab601"
             else
-                wgt.values.craft_name = "sab588"
+                wgt.values.craft_name = "sab580"
             end
-            log("updateCraftName - newCraftName: %s", wgt.values.craft_name)
+            log("updateCraftName - CraftName: %s", wgt.values.craft_name)
             dbgReplImg = m_clock()
         end
     else
@@ -423,34 +422,46 @@ local function updateELRS(wgt)
     wgt.values.link_tx_power_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.link_tx_power)
 end
 
-local function updateImage(wgt)
-    local newCraftName = wgt.values.craft_name .. ".png"
+local function calcImageKey(wgt)
     local modleCraftName = model.getInfo().bitmap
-    -- log("updateImage - current craft name: %s ?= %s", newCraftName, wgt.values.img_craft_name_for_image)
-    if wgt.values.img_craft_name_for_image==newCraftName or wgt.values.img_craft_name_for_image==modleCraftName then
-        -- log("updateImage - craft name not changed")
+    local key = wgt.values.craft_name .. "|" .. modleCraftName
+    -- log("updateImage - imageKey: %s", key)
+    return key
+end
+local function updateImage(wgt)
+    local newKey = calcImageKey(wgt)
+    if wgt.values.img_last_key == newKey then
+        -- log("updateImage - image key not changed")
         return
     end
-    log("updateImage - craft name changed --> newCraftName: %s, img_craft_name_for_image: %s", wgt.values.craft_name, wgt.values.img_craft_name_for_image)
 
-    local filename = "/IMAGES/"..newCraftName
+    log("updateImage - craft name changed --> CraftName: %s, img_craft_image_name: %s", wgt.values.craft_name, wgt.values.img_craft_image_name)
+    wgt.values.img_last_key = newKey
+
+    local filename = "/IMAGES/" .. wgt.values.craft_name .. ".png"
     log("updateImage - is-exist image: %s", filename)
-    if wgt.tools.isFileExist(filename) ==false then
-        log("updateImage - not exist: %s", filename)
-        log("updateImage - is exit org model image: %s", modleCraftName)
-        filename = "/IMAGES/"..modleCraftName
-        if modleCraftName == "" or wgt.tools.isFileExist(filename) ==false then
-            filename = baseDir.."widgets/img/rf2_logo.png"
-        end
+    if wgt.tools.isFileExist(filename) == true then
+        log("updateImage - found image for model: %s", filename)
+        wgt.values.img_craft_image_name = filename
+        return
+    end
+    local filename = "/IMAGES/" .. wgt.values.craft_name .. ".jpg"
+    log("updateImage - is-exist image: %s", filename)
+    if wgt.tools.isFileExist(filename) == true then
+        log("updateImage - found image for model: %s", filename)
+        wgt.values.img_craft_image_name = filename
+        return
     end
 
-    log("updateImage - 111 %s ?= %s", wgt.values.img_last_name, filename)
-    if filename ~= wgt.values.img_last_name then
-        log("updateImage - 222 model changed, %s --> %s", wgt.values.img_last_name, filename)
-        wgt.values.img_last_name = filename
-        -- wgt.values.img_craft_name_for_image = newCraftName
+    local filename = "/IMAGES/" .. model.getInfo().bitmap
+    log("updateImage - is-exist image: %s", filename)
+    if wgt.tools.isFileExist(filename) == true then
+        log("updateImage - found image for craft: %s", filename)
+        wgt.values.img_craft_image_name = filename
+        return
     end
-    wgt.values.img_craft_name_for_image = newCraftName
+
+    wgt.values.img_craft_image_name = baseDir.."/img/rf2_logo.png"
 end
 
 local function updateOnNoConnection()
@@ -488,16 +499,16 @@ local function update(wgt, options)
     wgt.options = options
     updateOnNoConnection()
 
-    wgt.tools = assert(loadScript(baseDir .. "/widgets/lib_widget_tools.lua", "btd"))(nil, app_name)
-
-    wgt.tlmEngine = loadScript(baseDir .. "/widgets/telemetry_engine.lua", "btd")(runningInSimulator, app_name, log)
+    wgt.tools     = assert(loadScript(baseDir .. "/lib_widget_tools.lua", "btd"))(m_log, app_name)
+    wgt.statusbar = assert(loadScript(baseDir .. "/parts/statusbar.lua",  "btd"))(m_log.info, app_name, wgt.tools)
+    wgt.tlmEngine = assert(loadScript(baseDir .. "/telemetry_engine.lua", "btd"))(m_log.info, app_name, runningInSimulator)
     log("x-telemetery tlmTask: %s", wgt.tlmEngine)
     wgt.tlmEngine.init()
 
-    wgt.task_capa_audio = loadScript(baseDir .. "/widgets/tasks/task_capa_audio.lua", "btd")(baseDir, log, app_name)
+    wgt.task_capa_audio = loadScript(baseDir .. "/tasks/task_capa_audio.lua", "btd")(baseDir, log, app_name)
     wgt.task_capa_audio.init()
 
-    wgt.task_flight_stage = loadScript(baseDir .. "/widgets/tasks/task_flight_stage.lua", "btd")(baseDir, log, app_name, onFlightStateChanged)
+    wgt.task_flight_stage = loadScript(baseDir .. "/tasks/task_flight_stage.lua", "btd")(baseDir, log, app_name, onFlightStateChanged)
     wgt.task_flight_stage.init()
 
 
@@ -513,7 +524,7 @@ local function update(wgt, options)
     end
 
     if lvgl.isFullScreen() then
-        dashboard_file_name = "rf2_dashboard_app_mode.lua"
+        dashboard_file_name = "dashboard_app_mode.lua"
     end
     log("update: gui style: %s", dashboard_file_name)
     build_ui(wgt, dashboard_file_name)
@@ -527,11 +538,16 @@ local function create(zone, options)
 end
 
 local function background(wgt)
+    local prev_is_connected = wgt.is_connected
     wgt.is_connected = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.is_connected)
 
-    if wgt.task_flight_stage.isOnAir() then
-        wgt.tlmEngine.updatePostFlightValues()
+    if prev_is_connected==false and wgt.is_connected==true and wgt.task_flight_stage.isOnPreFlight() then
+        log("background: connection re-established")
+        wgt.tlmEngine.resetSensorsMinMax()
+    end
 
+    if wgt.task_flight_stage.isPostFlight()==false then
+        wgt.tlmEngine.updatePostFlightValues()
     end
 
     updateTimeCount(wgt)
@@ -570,6 +586,9 @@ local function refresh(wgt, event, touchState)
 
     background(wgt)
 
+    if curr_dashboard.refresh ~= nil then
+        curr_dashboard.refresh(wgt, event, touchState)
+    end
 --    dbgLayout()
 end
 

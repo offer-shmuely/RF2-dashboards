@@ -1,6 +1,5 @@
 rf2 = {
     baseDir = "/SCRIPTS/RF2-dashboards/RF2/",
-    app_ver = "2.2.12b",
     runningInSimulator = string.sub(select(2, getVersion()), -4) == "simu",
     enable_serial_debug = false,
     enable_log_to_file  = false,

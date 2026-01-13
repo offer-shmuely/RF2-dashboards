@@ -37,7 +37,7 @@ M.build_ui = function(parentBox, wgt, a_x, a_y, a_color, a_txt, f_val, f_percent
                     endAngle=function() return calEndAngle(f_percent) end,
                     color=a_color},
                 {type="label", x=15, y=70, text= f_val, font=FS.FONT_8, color=txtColor},
-                -- {type="image", x=35, y=25, file="/SCRIPTS/RF2-dashboards/widgets/img/"..a_icon, w=16, h=16, visible=a_icon~=nil},
+                -- {type="image", x=35, y=25, file="/SCRIPTS/RF2-dashboards/img/"..a_icon, w=16, h=16, visible=a_icon~=nil},
             }
         }
     })
