@@ -5,6 +5,16 @@ All notable changes to RF2-dashboard will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.14] - 2026-01
+- Add top-bar when widget layout doesn't include one
+- Improve dashboard selection logic
+- Enable transition from post-flight dashboard to regular dashboard on arm/disarm
+- Reset telemetry min/max values 4 seconds after connection (in addition to flight start)
+- Show warning message for EdgeTX versions below 2.11.3 (the widget used to disapear)
+- unified color for warning on post-flight dashboard
+
+---
+
 ## [2.2.13] - 2026-01
 
 ### Added

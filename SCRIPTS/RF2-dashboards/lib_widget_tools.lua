@@ -69,6 +69,10 @@ function M.periodicStart(t, durationMili)
     t.durationMili = durationMili;
 end
 
+function M.periodicStop(t)
+    t.durationMili = -1;
+end
+
 function M.periodicHasPassed(t, show_log)
     -- not started yet
     if (t.durationMili <= 0) then

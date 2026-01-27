@@ -25,8 +25,20 @@ M.build_ui = function(wgt)
 
     -- global
     lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
-    local pMain = lvgl.box({x=0, y=0})
 
+    -- top bar
+    lvgl.box({x=0, y=0, w=LCD_W, h=40, visible=function() return wgt.isNeedTopbar end,
+        children={
+            {type="rectangle", x=0, y=0, w=LCD_W, h=40, color=DARKGREY, filled=true},
+            {type="label", x=60, y=1, font=FS.FONT_16, color=txtColor, text=function() return wgt.values.craft_name end},
+            {type="image", x=0, y=0, w=45, h=45, file="/SCRIPTS/RF2-dashboards/img/rf2_logo.png"},
+        }
+    })
+
+
+    -- main dashboard area
+
+    local pMain = lvgl.box({x=0, y=wgt.selfTopbarHeight})
     -- pid profile (bank)
     pMain:build({{type="box", x=30+280, y=150,
         children={
@@ -95,43 +107,47 @@ M.build_ui = function(wgt)
         return v
     end
 
-    local bCurr = pMain:box({x=2, y=g_y})
-    bCurr:label({text="Current",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor})
-    bCurr:label({x=35, y=40, text=function() return wgt.values.curr_str end, font=FS.FONT_8, color=txtColor})
-    bCurr:label({x=30, y=65, text=function() return wgt.values.curr_max_str end, font=FS.FONT_8, color=txtColor})
-    bCurr:arc({x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, rounded=true, color=lcd.RGB(0x222222)})
-    -- bCurr:arc({x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_max_percent) end, color=lcd.RGB(0xFF623F), opacity=180})
-    bCurr:arc({x=50, y=50, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_max_percent) end, color=lcd.RGB(0xFF623F), opacity=180})
-    bCurr:arc({x=50, y=50, radius=g_rad , thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_percent)     end, color=lcd.RGB(0xFF623F)})
-
+    local bCurr = pMain:box({x=2, y=g_y,
+        children={
+            {type="label", text="Current",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", x=35, y=40, text=function() return wgt.values.curr_str end, font=FS.FONT_8, color=txtColor},
+            {type="label", x=30, y=65, text=function() return wgt.values.curr_max_str end, font=FS.FONT_8, color=txtColor},
+            {type="arc", x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, rounded=true, color=lcd.RGB(0x444444)},
+            {type="arc", x=50, y=50, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_max_percent) end, color=lcd.RGB(0xFF623F), opacity=180},
+            {type="arc", x=50, y=50, radius=g_rad , thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_percent)     end, color=lcd.RGB(0xFF623F)},
+        }
+    })
     -- thr
-    local bThr = pMain:box({x=2+2*g_rad+10, y=g_y })
-    bThr:label({text="thr",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor})
-    bThr:label({x=35, y=40, text=function() return string.format("%s%%", wgt.values.thr)      end, font=FS.FONT_8, color=txtColor})
-    bThr:label({x=35, y=65, text=function() return string.format("+%s%%", wgt.values.thr_max) end, font=FS.FONT_8, color=txtColor})
-    bThr:arc({x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, color=lcd.RGB(0x222222)})
-    bThr:arc({x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.thr_max) end, color=lcd.RGB(0xFFA72C), opacity=80})
-    bThr:arc({x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.thr)     end, color=lcd.RGB(0xFFA72C)})
+    pMain:box({x=2+2*g_rad+10, y=g_y,
+        children={
+            {type="label", text="Thr",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", x=35, y=40, text=function() return string.format("%s%%", wgt.values.thr)      end, font=FS.FONT_8, color=txtColor},
+            {type="label", x=35, y=65, text=function() return string.format("+%s%%", wgt.values.thr_max) end, font=FS.FONT_8, color=txtColor},
+            {type="arc", x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, color=lcd.RGB(0x444444)},
+            {type="arc", x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.thr_max) end, color=lcd.RGB(0xFFA72C), opacity=80},
+            {type="arc", x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.thr)     end, color=lcd.RGB(0xFFA72C)},
+        }
+    })
 
     -- temp
-    local bTemp = pMain:box({x=2+4*g_rad+20, y=g_y})
-    bTemp:label({text="temp",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor})
-    bTemp:label({x=35, y=40, text=function() return (wgt.values.EscT_str or "--°c") end, font=FS.FONT_8, color=txtColor})
-    bTemp:label({x=35, y=65, text=function() return (wgt.values.EscT_max_str or "--°c") end, font=FS.FONT_8, color=txtColor})
-    bTemp:arc({x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, color=lcd.RGB(0x222222)})
-    -- bTemp:arc({x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_max_percent) end, color=lcd.RGB(0x1F96C2), opacity=180})
-    bTemp:arc({x=50, y=50, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_max_percent) end, color=lcd.RGB(0x1F96C2), opacity=180})
-    bTemp:arc({x=50, y=50, radius=g_rad,  thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_percent)     end, color=lcd.RGB(0x1F96C2)})
-
+    pMain:box({x=2+4*g_rad+20, y=g_y,
+        children={
+            {type="label", text="temp",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", x=35, y=40, text=function() return (wgt.values.EscT_str or "--°c") end, font=FS.FONT_8, color=txtColor},
+            {type="label", x=35, y=65, text=function() return (wgt.values.EscT_max_str or "--°c") end, font=FS.FONT_8, color=txtColor},
+            {type="arc", x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, color=lcd.RGB(0x444444)},
+            {type="arc", x=50, y=50, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_max_percent) end, color=lcd.RGB(0x1F96C2), opacity=180},
+            {type="arc", x=50, y=50, radius=g_rad,  thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_percent)     end, color=lcd.RGB(0x1F96C2)},
+        }
+    })
     -- image
     local isizew=150
     local isizeh=100
-    local bImageArea = pMain:box({x=330, y=5})
-    -- bImageArea:rectangle({x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY})
-    bImageArea:image({x=0, y=0, w=isizew, h=isizeh, fill=false,
-        file=function()
-            return wgt.values.img_craft_image_name
-        end
+    pMain:box({x=330, y=5,
+        children={
+            -- {type="rectangle", x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY},
+            {type="image", x=0, y=0, w=isizew, h=isizeh, fill=false, file=function() return wgt.values.img_craft_image_name end}
+        }
     })
 
     -- flights count

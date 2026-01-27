@@ -6,7 +6,6 @@ local tools = arg[4]
 local statusbar = arg[5]
 local inSimu = arg[6]
 
-
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 
@@ -19,7 +18,7 @@ M.build_ui = function(wgt)
     if (wgt == nil) then log("refresh(nil)") return end
     if (wgt.options == nil) then log("refresh(wgt.options=nil)") return end
     local txtColor = wgt.options.textColor
-
+    local titleGreyColor = LIGHTGREY
 
     local dx = 20
 
@@ -27,7 +26,19 @@ M.build_ui = function(wgt)
 
     -- global
     lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
-    local pMain = lvgl.box({x=0, y=0})
+
+    -- top bar
+    lvgl.box({x=0, y=0, w=LCD_W, h=40, visible=function() return wgt.isNeedTopbar end,
+        children={
+            {type="rectangle", x=0, y=0, w=LCD_W, h=40, color=DARKGREY, filled=true},
+            {type="label", x=60, y=2, font=FS.FONT_16, color=txtColor, text=function() return wgt.values.craft_name end},
+            {type="image", x=0, y=0, w=45, h=45, file="/SCRIPTS/RF2-dashboards/img/rf2_logo.png"},
+        }
+    })
+
+
+    -- main dashboard area
+    local pMain = lvgl.box({x=0, y=wgt.selfTopbarHeight})
 
 
     -- time
@@ -39,7 +50,6 @@ M.build_ui = function(wgt)
     })
 
 
-    -- current
     local g_rad = 40
     local g_thick = 8--11
     local gm_rad = g_rad-10
@@ -54,21 +64,15 @@ M.build_ui = function(wgt)
         local v = ((percent/100) * (g_angel_max-g_angel_min)) + g_angel_min
         return v
     end
-
     local bx = 5
     local by = 5
 
     -- current
     lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Current",
         function() return wgt.values.curr_max_str  or "--A"end,
-        function() return wgt.values.curr_max_percent end
-    )
-
-    bx = bx + g_rad*2 + x_space
-    -- thr
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFFA72C), "Throttle",
-        function() return string.format("%s%%", wgt.values.thr_max) end,
-        function() return wgt.values.thr_max end
+        function() return wgt.values.curr_max_percent end,
+        nil,
+        wgt.tlmEngine.sensorTable.current
     )
 
     bx = bx + g_rad*2 + x_space
@@ -77,7 +81,18 @@ M.build_ui = function(wgt)
     lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0x1F96C2), "Temperature",
         function() return wgt.values.EscT_max_str or "--°c" end,
         function() return wgt.values.EscT_max_percent end,
-        "temperature.png"
+        "temperature.png",
+        wgt.tlmEngine.sensorTable.temp_esc
+    )
+
+    bx = bx + g_rad*2 + x_space
+
+    -- thr
+    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFFA72C), "Throttle",
+        function() return string.format("%s%%", wgt.values.thr_max) end,
+        function() return wgt.values.thr_max end,
+        nil,
+        wgt.tlmEngine.sensorTable.throttle_percent
     )
 
     bx = 5
@@ -85,8 +100,10 @@ M.build_ui = function(wgt)
 
     -- capacity
     lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Capacity",
-    function() return string.format("%dmah", wgt.values.capaRemain or 0) end,
-        function() return wgt.values.capaPercent or 0 end
+        function() return string.format("%dmah", wgt.values.capaRemain or 0) end,
+        function() return wgt.values.capaPercent or 0 end,
+        nil,
+        wgt.tlmEngine.sensorTable.capa
     )
 
     bx = bx + g_rad*2 + x_space
@@ -94,14 +111,18 @@ M.build_ui = function(wgt)
     -- Battery
     lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Battery",
         function() return string.format("%.02fv",  wgt.values.volt) end,
-        function() return wgt.values.cell_percent end
+        function() return wgt.values.cell_percent end,
+        nil,
+        wgt.tlmEngine.sensorTable.batt_voltage
     )
     bx = bx + g_rad*2 + x_space
 
     -- BecVoltage
     lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Bec Voltage",
         function() return string.format("%.02fv", wgt.values.vbec_min) end,
-        function() return wgt.values.vbec_min_percent end
+        function() return wgt.values.vbec_min_percent end,
+        nil,
+        wgt.tlmEngine.sensorTable.bec_voltage
     )
     -- -- capacity
     -- local bCapa = pMain:box({x=5, y=145})
@@ -121,7 +142,9 @@ M.build_ui = function(wgt)
     -- rqly
     lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "RQly (min)",
         function() return string.format("%s%%", wgt.values.link_rqly_min) end,
-        function() return wgt.values.link_rqly_min end
+        function() return wgt.values.link_rqly_min end,
+        nil,
+        wgt.tlmEngine.sensorTable.link_rqly
     )
 
 
@@ -137,8 +160,8 @@ M.build_ui = function(wgt)
     bStatusBar:label({x=380, y=2, text="Shmuely", font=FS.FONT_6, color=YELLOW})
 
     wgt.statusbar.init("Shmuely", {
-        {name="RQly-:", ftxt=function() return string.format("RQly-: %s%%", wgt.values.link_rqly_min) end, color=GREEN, error_color=RED, error_cond=function() return (wgt.values.link_rqly < 80) end },
-        {name="VBec-:", ftxt=function() return string.format("VBec-: %sV",  wgt.values.vbec_min) end, color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.bec_voltage.isWarn() end },
+        {name="RQly-:", ftxt=function() return string.format("RQly-: %s%%", wgt.values.link_rqly_min) end,  color=GREEN, error_color=RED, error_cond=function() return (wgt.values.link_rqly < 80) end },
+        {name="VBec-:", ftxt=function() return string.format("VBec-: %sV",  wgt.values.vbec_min) end,       color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.bec_voltage.isWarn() end },
         {name="Curr+:", ftxt=function() return string.format("Curr+: %sV",  wgt.values.curr_max) end},
         {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw", wgt.values.link_tx_power_max) end},
         {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",  wgt.values.thr_max) end},
@@ -149,12 +172,11 @@ M.build_ui = function(wgt)
     -- image
     local isizew=150
     local isizeh=100
-    local bImageArea = pMain:box({x=330, y=5})
-    bImageArea:rectangle({x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY})
-    bImageArea:image({x=0, y=0, w=isizew, h=isizeh, fill=false,
-        file=function()
-            return wgt.values.img_craft_image_name
-        end
+    pMain:box({x=330, y=5,
+        children={
+            -- {type="rectangle", x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY},
+            {type="image", x=0, y=0, w=isizew, h=isizeh, fill=false, file=function() return wgt.values.img_craft_image_name end}
+        }
     })
 
     -- flights count

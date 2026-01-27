@@ -25,8 +25,20 @@ M.build_ui = function(wgt)
 
     -- global
     lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
-    local pMain = lvgl.box({x=0, y=0})
 
+    -- top bar
+    lvgl.box({x=0, y=0, w=LCD_W, h=40, visible=function() return wgt.isNeedTopbar end,
+        children={
+            {type="rectangle", x=0, y=0, w=LCD_W, h=40, color=DARKGREY, filled=true},
+            {type="label", x=60, y=1, font=FS.FONT_16, color=txtColor, text=function() return wgt.values.craft_name end},
+            {type="image", x=0, y=0, w=45, h=45, file="/SCRIPTS/RF2-dashboards/img/rf2_logo.png"},
+        }
+    })
+
+
+    -- main dashboard area
+
+    local pMain = lvgl.box({x=0, y=wgt.selfTopbarHeight})
     -- pid profile (bank)
     pMain:build({{type="box", x=0, y=0,
         children={
@@ -113,17 +125,15 @@ M.build_ui = function(wgt)
     -- image
     local isizew=150
     local isizeh=100
-    local bImageArea = pMain:box({x=330, y=5})
-    -- bImageArea:rectangle({x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY})
-    bImageArea:image({x=0, y=0, w=isizew, h=isizeh, fill=false,
-        file=function()
-            return wgt.values.img_craft_image_name
-        end
+    pMain:box({x=330, y=5,
+        children={
+            -- {type="rectangle", x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY},
+            {type="image", x=0, y=0, w=isizew, h=isizeh, fill=false, file=function() return wgt.values.img_craft_image_name end}
+        }
     })
 
     -- flights count
     pMain:build({{type="box", x=340, y=105,
-                    -- pos= function() return dbgx, dbgy end,
         children={
             {type="label", text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
             -- {type="label", text="Flights: ", x=50, y=2, font=FS.FONT_6, color=lcd.RGB(0x999999)},

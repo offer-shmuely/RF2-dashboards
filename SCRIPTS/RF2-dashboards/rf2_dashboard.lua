@@ -1,5 +1,5 @@
 local app_name = "RF2-dashboards"
-local app_ver = "2.2.13"
+local app_ver = "2.2.14"
 
 local baseDir = "/SCRIPTS/RF2-dashboards"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
@@ -493,10 +493,11 @@ local function onFlightStateChanged(oldState, newState)
     end
 end
 
-local function update(wgt, options)
+local function update(wgt111, options)
     log("update")
-    if (wgt == nil) then return end
+    -- if (wgt == nil) then return end
     wgt.options = options
+    wgt.is_connected = false
     updateOnNoConnection()
 
     wgt.tools     = assert(loadScript(baseDir .. "/lib_widget_tools.lua", "btd"))(m_log, app_name)
@@ -504,6 +505,8 @@ local function update(wgt, options)
     wgt.tlmEngine = assert(loadScript(baseDir .. "/telemetry_engine.lua", "btd"))(m_log.info, app_name, runningInSimulator)
     log("x-telemetery tlmTask: %s", wgt.tlmEngine)
     wgt.tlmEngine.init()
+
+    wgt.periodicResetTlmAfterConnection = wgt.tools.periodicInit()
 
     wgt.task_capa_audio = loadScript(baseDir .. "/tasks/task_capa_audio.lua", "btd")(baseDir, log, app_name)
     wgt.task_capa_audio.init()
@@ -522,6 +525,11 @@ local function update(wgt, options)
     if wgt.options.guiStylePost == #dashboard_post_styles then
         dashboard_post_file_name = dashboard_file_name
     end
+
+    wgt.isNeedTopbar = (wgt.zone.w == LCD_W and wgt.zone.h == LCD_H)
+    wgt.selfTopbarHeight = wgt.isNeedTopbar and 40 or 0
+
+    --log("update: win size: %s,%s %sx%s %sx%s (is_full_area: %s)", wgt.zone.x, wgt.zone.y, wgt.zone.w, wgt.zone.h, LCD_W, LCD_H, wgt.isNeedTopbar)
 
     if lvgl.isFullScreen() then
         dashboard_file_name = "dashboard_app_mode.lua"
@@ -543,6 +551,14 @@ local function background(wgt)
 
     if prev_is_connected==false and wgt.is_connected==true and wgt.task_flight_stage.isOnPreFlight() then
         log("background: connection re-established")
+        wgt.tlmEngine.resetSensorsMinMax()
+        wgt.tools.periodicStart(wgt.periodicResetTlmAfterConnection, 4000)
+    end
+
+    -- reset tlm also 4 seconds after connection
+    if wgt.is_connected == true and wgt.tools.periodicHasPassed(wgt.periodicResetTlmAfterConnection) then
+        wgt.tools.periodicStop(wgt.periodicResetTlmAfterConnection)
+        log("background: reset telem on 4 sec after connection...")
         wgt.tlmEngine.resetSensorsMinMax()
     end
 

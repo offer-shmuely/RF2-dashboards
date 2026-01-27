@@ -11,7 +11,6 @@ local NAN_VAL = 111
 M.is_post_flight = false
 
 local sensorTable
-
 sensorTable = {
     -- VFR / RQly
     link_rqly = {
@@ -23,6 +22,8 @@ sensorTable = {
                 sensor.lastValueMin = 42
             end
         end,
+        low_warning=90,
+        low_alert=80,
         sim = {
             getValue = function() return 92 end,
         },
@@ -73,6 +74,8 @@ sensorTable = {
                 sensor.lastValueMin = 23.0
             end
         end,
+        low_warning=20,
+        low_alert=10,
         sim = {
             getValue = function() return 23.0 end,
         },
@@ -95,6 +98,8 @@ sensorTable = {
             -- return v < 8.6
             return false
         end,
+        low_warning=95,
+        low_alert=90,
         update_sim = function(sensor)
             if sensor.lastValueMin == NAN_VAL then
                 sensor.lastValueMin = 7.2
@@ -134,6 +139,8 @@ sensorTable = {
                 sensor.lastValueMax = 115
             end
         end,
+        high_warning = 80,
+        high_alert = 90,
         sim = {
             getValue = function() return 40 end,
         },
@@ -150,6 +157,8 @@ sensorTable = {
                 sensor.lastValueMax = 120
             end
         end,
+        high_warning = 80,
+        high_alert = 90,
         sim = {
             getValue = function() return 40 end,
         },
@@ -165,6 +174,8 @@ sensorTable = {
         name = "capacity",
         sourceId = "Capa", -- Capa
         lastValue = NAN_VAL,
+        low_warning = 20,
+        low_alert = 10,
         sim = {
             getValue = function() return 1000 end,
         },
@@ -211,6 +222,8 @@ sensorTable = {
         name = "throttle_pct",
         sourceId = "Thr",
         lastValueMax = NAN_VAL,
+        high_warning = 80,
+        high_alert = 90,
         update_sim = function(sensor)
             if sensor.lastValueMax == NAN_VAL then
                 sensor.lastValueMax = 76

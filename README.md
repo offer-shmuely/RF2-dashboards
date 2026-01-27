@@ -12,6 +12,9 @@ Rotorflight2 dashboards for EdgeTX radios (v2.11.x)
 
 <img width="490" height="285" alt="image" src="https://github.com/user-attachments/assets/db48e464-5c2c-479f-8128-add91d624189" />
 
+### Post flight dashboard (style 1)
+<img width="496" height="284" alt="image" src="https://github.com/user-attachments/assets/49349776-cbca-45e4-8ce9-95eb2cde1b9f" />
+
 
 Note: The work is still work in progress, (and probably will always be 😉 )
 <br>

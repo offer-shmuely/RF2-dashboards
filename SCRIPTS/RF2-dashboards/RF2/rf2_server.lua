@@ -449,7 +449,7 @@ local function state_ON_AIR_INIT(wgt)
 end
 
 local function state_ON_AIR(wgt)
-    log("STATE.ON_AIR (no msp calls)")
+    -- log("STATE.ON_AIR (no msp calls)")
     backgroundTask()
     -- fictive update time to avoid disconnection while on air
     rf2fc.msp.ctl.lastUpdateTime = rf2.clock()
