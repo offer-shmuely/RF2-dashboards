@@ -238,7 +238,9 @@ The RF2 Server widget runs in the background and handles telemetry data. It's es
    - RF2 logo or connection status
    - "No telemetry" or "Waiting for connection" message if not connected to a model
    
-   ![Widget No Connection](images/10-no-connection.png)
+   ![Widget No Connection](../SCRIPTS/RF2-dashboards/img/no_connection_wr.png)
+   
+   *Example: The widget displays the RF2 logo with a "No Connection" indicator when no telemetry is received.*
 
 3. If you have a Rotorflight 2 flight controller connected:
    - Power on your helicopter/aircraft
@@ -250,7 +252,14 @@ The RF2 Server widget runs in the background and handles telemetry data. It's es
      - Temperature
      - GPS data (if available)
    
-   ![Widget Connected](images/11-connected.png)
+   
+   **Dashboard Style 1:**
+   <img width="488" height="283" alt="RF2 Dashboard Style 1" src="https://github.com/user-attachments/assets/e64ba49f-81d0-454a-ad93-c7a7bf33ffdf" />
+   
+   **Dashboard Style 2:**
+   <img width="490" height="285" alt="RF2 Dashboard Style 2" src="https://github.com/user-attachments/assets/db48e464-5c2c-479f-8128-add91d624189" />
+   
+   *Examples: Live telemetry data displayed in different dashboard styles.*
 
 ### Common Display States
 
