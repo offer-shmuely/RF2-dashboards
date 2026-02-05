@@ -27,6 +27,11 @@ RF2-dashboards is a collection of Lua scripts and widgets designed to provide co
 
 ---
 
+## 📚 Documentation
+
+### [📖 Installation Guide for RadioMaster TX16S](docs/INSTALLATION.md)
+Step-by-step installation instructions for RadioMaster TX16S with EdgeTX 2.11 or above, including screenshots and troubleshooting.
+
 ### [Wiki](https://github.com/offer-shmuely/RF2-dashboards/wiki/Home/)
 
 ### [Installation on wiki](https://github.com/offer-shmuely/RF2-dashboards/wiki/Installation)
