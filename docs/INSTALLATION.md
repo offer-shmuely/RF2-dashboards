@@ -1,14 +1,13 @@
-# Installation Guide - RadioMaster TX16S (EdgeTX 2.11+)
+# Installation Guide - RadioMaster TX16S (EdgeTX 2.11.3+)
 
-Step-by-step guide for installing RF2-dashboards widget on RadioMaster TX16S with EdgeTX 2.11 or above.
+Step-by-step guide for installing RF2-dashboards widget on RadioMaster TX16S with EdgeTX 2.11.3 or above.
 
 ## Prerequisites
 
 - RadioMaster TX16S (or compatible EdgeTX color screen radio)
-- EdgeTX 2.11.0 or higher
-- MicroSD card
+- EdgeTX 2.11.3 or higher
 - Rotorflight 2.x flight controller
-- USB cable or SD card reader
+- USB cable
 
 To check EdgeTX version: `MENU > RADIO SETUP > VERSION`
 
@@ -22,9 +21,10 @@ To check EdgeTX version: `MENU > RADIO SETUP > VERSION`
 
 ### 2. Copy Files to SD Card
 
-**Connect SD Card:**
-- **USB Method**: Connect TX16S via USB, set `MENU > RADIO SETUP > USB Mode: Storage (SD)`
-- **SD Reader Method**: Remove SD card and use card reader
+**Connect via USB:**
+- Connect TX16S to computer via USB cable
+- On the radio: `MENU > RADIO SETUP > USB Mode: Storage (SD)`
+- SD card will appear as a drive on your computer
 
 **Copy Files:**
 ```
@@ -38,7 +38,7 @@ SD CARD/
 
 **Important**: Copy both `SCRIPTS/RF2-dashboards/` and `WIDGETS/rf2_dashboard/` + `WIDGETS/rf2_server/`
 
-Safely eject the SD card.
+Safely eject the SD card from your computer.
 
 ### 3. Add Widgets to Your Model
 
@@ -79,7 +79,7 @@ Long-press the rf2_dashboard widget → **Widget settings** to adjust:
 **Widget not in list?**
 - Verify files in correct folders: `SD:/WIDGETS/rf2_dashboard/main.lua` and `SD:/WIDGETS/rf2_server/main.lua`
 - Restart radio
-- Check EdgeTX version ≥ 2.11.0
+- Check EdgeTX version ≥ 2.11.3
 
 **Black screen or error?**
 - Add both `rf2_dashboard` AND `rf2_server` widgets
