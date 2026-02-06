@@ -46,15 +46,17 @@ Safely eject the SD card from your computer.
 2. Press **MENU** → **SCREEN SETUP** (or **WIDGETS**)
 3. Select a screen layout (recommend "Full screen" for main widget)
 4. Tap widget zone → **Select widget** → Choose **rf2_dashboard**
-5. **IMPORTANT**: Add **rf2_server** widget to another zone (can be small/hidden)
+5. **IMPORTANT**: Add **rf2_server** widget to the top-bar in a small layout
    - Both widgets are required for the dashboard to work
+   - The rf2_server widget shows green dots when communicating with the flight controller
 
 ### 4. Configure (Optional)
 
-Long-press the rf2_dashboard widget → **Widget settings** to adjust:
-- Dashboard style
-- Color themes  
-- Display units
+Long-press the rf2_dashboard widget → **Widget settings** to configure:
+- **Dashboard style**: Choose between different dashboard layouts (Style 1, Style 2, Post-flight)
+- **Color themes**: Select color scheme for the dashboard
+- **Auto-switch to post-flight**: Enable/disable automatic switch to summary after landing
+- **Reserve capacity**: Set battery reserve percentage (0-40%)
 
 ### 5. Verify Installation
 
@@ -65,6 +67,7 @@ Long-press the rf2_dashboard widget → **Widget settings** to adjust:
 - RPM (head speed)
 - Temperature
 - GPS data (if available)
+- The rf2_server widget will display green dots indicating active communication
 
 ## Dashboard Styles
 
@@ -103,6 +106,6 @@ Long-press the rf2_dashboard widget → **Widget settings** to adjust:
 
 ---
 
-**Compatible with**: TX16S, TX12, X10/X10S, X12S, and other EdgeTX color screen radios
+**Compatible with**: TX16S, X10/X10S, X12S, and other EdgeTX color screen radios
 
 For questions or issues, visit the [GitHub repository](https://github.com/offer-shmuely/RF2-dashboards).
