@@ -1,6 +1,6 @@
 # Installation Guide - RadioMaster TX16S
 
-Step-by-step guide for installing RF2-dashboards widget on RadioMaster TX16S with EdgeTX 2.11.3 or above.
+Step-by-step guide for installing RF2-dashboards widget on RadioMaster TX16S.
 
 ## Prerequisites
 
