@@ -1,15 +1,15 @@
-# Installation Guide - RadioMaster TX16S (EdgeTX 2.11.3+)
+# Installation Guide - RadioMaster TX16S
 
 Step-by-step guide for installing RF2-dashboards widget on RadioMaster TX16S with EdgeTX 2.11.3 or above.
 
 ## Prerequisites
 
 - RadioMaster TX16S (or compatible EdgeTX color screen radio)
-- EdgeTX 2.11.3 or higher
-- Rotorflight 2.x flight controller
+- EdgeTX v2.11.3 or higher
+- Rotorflight v2.2 flight controller
 - USB cable
 
-To check EdgeTX version: `MENU > RADIO SETUP > VERSION`
+To check EdgeTX version: `MENU > RADIO SETUP > ABOUT > version`
 
 ## Installation Steps
 
