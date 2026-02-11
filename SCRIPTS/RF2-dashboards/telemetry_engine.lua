@@ -74,32 +74,48 @@ sensorTable = {
                 sensor.lastValueMin = 23.0
             end
         end,
-        low_warning=20,
-        low_alert=10,
+        low_warning=15, -- 15%=3.710v
+        low_alert=7,    --  7%=3.601v
         sim = {
             getValue = function() return 23.0 end,
         },
     },
 
-    -- Bec Voltage
-    bec_voltage = {
-        name = "bec_voltage",
+    -- RxVoltage
+    rx_voltage = {
+        name = "rx_voltage",
         sourceId = "Vbec",
         lastValueMin = NAN_VAL,
         lastValueMax = NAN_VAL,
         isWarn = function()
-            -- local v = sensorTable.bec_voltage.lastValueMin
-            local dv = sensorTable.bec_voltage.lastValueMax - sensorTable.bec_voltage.lastValueMin
-            if dv > 0.9 then
-                log("bec_voltage.isWarn() called, dv=%s (min: %s, max: %s)", dv, sensorTable.bec_voltage.lastValueMin, sensorTable.bec_voltage.lastValueMax)
+            local dv = sensorTable.rx_voltage.lastValueMax - sensorTable.rx_voltage.lastValueMin
+            if dv > 0.5 then
+                log("rx_voltage.isWarn() called, dv=%s (min: %s, max: %s)", dv, sensorTable.rx_voltage.lastValueMin, sensorTable.rx_voltage.lastValueMax)
                 return true
             end
-            -- log("bec_voltage.isWarn() called, v=%s", v)
-            -- return v < 8.6
+            -- log("rx_voltage.isWarn() called, v=%s", v)
             return false
         end,
-        low_warning=95,
-        low_alert=90,
+        isAlert = function()
+            local dv = sensorTable.rx_voltage.lastValueMax - sensorTable.rx_voltage.lastValueMin
+            if dv > 0.9 then
+                log("rx_voltage.isAlert() called, dv=%s (min: %s, max: %s)", dv, sensorTable.rx_voltage.lastValueMin, sensorTable.rx_voltage.lastValueMax)
+                return true
+            end
+            -- log("rx_voltage.isAlert() called, v=%s", v)
+            return false
+        end,
+        -- low_warning=95,
+        -- low_alert=90,
+        fPercent = function(v)
+            if v == NAN_VAL then
+                return 0
+            end
+            if sensorTable.rx_voltage.lastValueMax <= 4.9 then
+                return 0
+            end
+            return math.min(100, math.max(0, ((v - 4.9) / (sensorTable.rx_voltage.lastValueMax - 4.9)) * 100))
+        end,
         update_sim = function(sensor)
             if sensor.lastValueMin == NAN_VAL then
                 sensor.lastValueMin = 7.2
@@ -115,7 +131,7 @@ sensorTable = {
     --     lastValue = NAN_VAL,
     -- },
 
-    -- RPM
+    -- headspeed
     rpm = {
         name = "headspeed",
         sourceId = "Hspd", -- Hspd / RPM
@@ -125,6 +141,8 @@ sensorTable = {
                 sensor.lastValueMax = 1800
             end
         end,
+        high_warning = 100,
+        high_alert = 100,
         sim = {
             getValue = function() return 1500 end,
         },
@@ -222,8 +240,8 @@ sensorTable = {
         name = "throttle_pct",
         sourceId = "Thr",
         lastValueMax = NAN_VAL,
-        high_warning = 80,
-        high_alert = 90,
+        high_warning = 90,
+        high_alert = 95,
         update_sim = function(sensor)
             if sensor.lastValueMax == NAN_VAL then
                 sensor.lastValueMax = 76
@@ -347,7 +365,7 @@ function M.updatePostFlightValues()
         end
 
         if sensor.lastValueMin ~= nil then
-            -- log("updateMin [%s] %s?=%s --> %s (v: %s)", sensor.name, sensor.lastValueMin, NAN_VAL, (sensor.lastValueMin == NAN_VAL), v)
+            -- log("updateMin [%s] %s?=%s --> %s (v%s)", sensor.name, sensor.lastValueMin, NAN_VAL, (sensor.lastValueMin == NAN_VAL), v)
             if v ~= NAN_VAL then
                 if sensor.lastValueMin == NAN_VAL then
                     sensor.lastValueMin = v

@@ -44,7 +44,7 @@ M.build_ui = function(wgt)
     -- time
     pMain:build({
         {type="box", x=370, y=130, children={
-            {type="label", text="Timer", x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", text="Time", x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
             {type="label", text=function() return wgt.values.timer_str end, x=0, y=15, font=FS.FONT_16 ,color=txtColor},
         }}
     })
@@ -69,7 +69,7 @@ M.build_ui = function(wgt)
 
     -- current
     lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Current",
-        function() return wgt.values.curr_max_str  or "--A"end,
+        function() return string.format("+%dA", wgt.values.curr_max)  or "--A"end,
         function() return wgt.values.curr_max_percent end,
         nil,
         wgt.tlmEngine.sensorTable.current
@@ -78,8 +78,8 @@ M.build_ui = function(wgt)
     bx = bx + g_rad*2 + x_space
 
     -- temp
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0x1F96C2), "Temperature",
-        function() return wgt.values.EscT_max_str or "--°c" end,
+    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0x1F96C2), "Esc Temp",
+        function() return string.format("+%d°c", wgt.values.EscT_max or "--°c") end,
         function() return wgt.values.EscT_max_percent end,
         "temperature.png",
         wgt.tlmEngine.sensorTable.temp_esc
@@ -95,18 +95,18 @@ M.build_ui = function(wgt)
         wgt.tlmEngine.sensorTable.throttle_percent
     )
 
-    bx = 5
-    by = 110
+    bx = bx + g_rad*2 + x_space
 
-    -- capacity
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Capacity",
-        function() return string.format("%dmah", wgt.values.capaRemain or 0) end,
-        function() return wgt.values.capaPercent or 0 end,
+    -- rqly
+    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Link Quality",
+        function() return string.format("%s%%", wgt.values.link_rqly_min) end,
+        function() return wgt.values.link_rqly_min end,
         nil,
-        wgt.tlmEngine.sensorTable.capa
+        wgt.tlmEngine.sensorTable.link_rqly
     )
 
-    bx = bx + g_rad*2 + x_space
+    bx = 5
+    by = 110
 
     -- Battery
     lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Battery",
@@ -117,54 +117,42 @@ M.build_ui = function(wgt)
     )
     bx = bx + g_rad*2 + x_space
 
-    -- BecVoltage
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Bec Voltage",
-        function() return string.format("%.02fv", wgt.values.vbec_min) end,
-        function() return wgt.values.vbec_min_percent end,
+    -- RxVoltage
+    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Rx Volt",
+        function() return string.format("%.02fv", wgt.values.v_rx_min) end,
+        function() return wgt.tlmEngine.sensorTable.rx_voltage.fPercent(wgt.values.v_rx_min) end,
         nil,
-        wgt.tlmEngine.sensorTable.bec_voltage
+        wgt.tlmEngine.sensorTable.rx_voltage
     )
-    -- -- capacity
-    -- local bCapa = pMain:box({x=5, y=145})
-    -- bCapa:label({text=function() return string.format("Capacity (Total: %s)", wgt.values.capaTotal) end,  x=0, y=0, font=FS.FONT_6, color=titleGreyColor})
-    -- lib_blackbox_horz.build_ui(bCapa, wgt,
-    --     {x=0, y=17,w=280,h=40,segments_w=20, color=WHITE, bg_color=BLACK, cath_w=10, cath_h=30, segments_h=20, cath=false},
-    --     function(wgt) return wgt.values.capaPercent end,
-    --     function(wgt) return wgt.values.capaColor end
-    -- )
-    -- bCapa:label({x=25,  y=16, font=FS.FONT_16 ,color=WHITE, text=function() return wgt.values.capaPercent_txt end})
-    -- bCapa:label({x=110, y=22, font=FS.FONT_12 ,color=WHITE, text=function() return string.format("(%.02fv)", wgt.values.volt) end})
-    -- -- bCapa:label({x=5, y=18, font=FS.FONT_8 ,color=WHITE, text=function() return string.format("%dmah", wgt.values.capaTotal) end})
-    -- bCapa:label({text=function() return string.format("used:\n%dmah", wgt.values.capaUsed or 0) end, x=220, y=20, font=FS.FONT_6 ,color=WHITE})
 
     bx = bx + g_rad*2 + x_space
 
-    -- rqly
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "RQly (min)",
-        function() return string.format("%s%%", wgt.values.link_rqly_min) end,
-        function() return wgt.values.link_rqly_min end,
+    -- headspeed
+    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Headspeed",
+        function() return string.format("%srpm", wgt.values.rpm_max) end,
+        function() return wgt.values.rpm_percent end,
         nil,
-        wgt.tlmEngine.sensorTable.link_rqly
+        wgt.tlmEngine.sensorTable.rpm
+    )
+
+    bx = bx + g_rad*2 + x_space
+
+    -- capacity
+    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Capacity",
+        function() return string.format("%d%% (used: %dmah)", wgt.values.capaPercent, wgt.values.capaUsed or 0) end,
+        function() return wgt.values.capaPercent or 0 end,
+        nil,
+        wgt.tlmEngine.sensorTable.capa
     )
 
 
     -- status bar
-    local bStatusBar = pMain:box({x=0, y=wgt.zone.h-20})
-    local statusBarColor = lcd.RGB(0x0078D4)
-    bStatusBar:rectangle({x=0, y=0,w=wgt.zone.w, h=20, color=statusBarColor, filled=true})
-    bStatusBar:rectangle({x=25, y=0,w=70, h=20, color=RED, filled=true, visible=function() return (wgt.values.link_rqly < 80) end })
-    bStatusBar:label({x=3  , y=2, text=function() return string.format("LQ-: %s%%", wgt.values.link_rqly_min) end, font=function() return (wgt.values.link_rqly >= 80) and FS.FONT_6 or FS.FONT_6  end, color=WHITE})
-    bStatusBar:label({x=120, y=2, text=function() return string.format("TPwr+: %smw", wgt.values.link_tx_power_max) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=230, y=2, text=function() return string.format("VBec-: %sv", wgt.values.vbec_min) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=300, y=2, text=function() return string.format("Thr+: %s%%", wgt.values.thr_max) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=380, y=2, text="Shmuely", font=FS.FONT_6, color=YELLOW})
-
     wgt.statusbar.init("Shmuely", {
-        {name="RQly-:", ftxt=function() return string.format("RQly-: %s%%", wgt.values.link_rqly_min) end,  color=GREEN, error_color=RED, error_cond=function() return (wgt.values.link_rqly < 80) end },
-        {name="VBec-:", ftxt=function() return string.format("VBec-: %sV",  wgt.values.vbec_min) end,       color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.bec_voltage.isWarn() end },
-        {name="Curr+:", ftxt=function() return string.format("Curr+: %sV",  wgt.values.curr_max) end},
-        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw", wgt.values.link_tx_power_max) end},
-        {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",  wgt.values.thr_max) end},
+        {name="RQly-:", ftxt=function() return string.format("LQ-: %s%%",     wgt.values.link_rqly_min) end,  color=GREEN, error_color=RED, error_cond=function() return (wgt.is_connected and wgt.values.link_rqly_min < 80) end },
+        {name="VBec-:", ftxt=function() return string.format("VBec-: %0.1fV", wgt.values.v_rx_min) end,       color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.rx_voltage.isWarn() end },
+        {name="Curr+:", ftxt=function() return string.format("A+: %dA",       wgt.values.curr_max) end},
+        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",   wgt.values.link_tx_power_max) end},
+        {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",    wgt.values.thr_max) end},
     })
     wgt.statusbar.build_ui(pMain, wgt)
 
@@ -201,15 +189,15 @@ M.build_ui = function(wgt)
     bCraftName:rectangle({x=10, y=20, w=isizew-20, h=20, filled=true, rounded=8, color=DARKGREY, opacity=200})
     bCraftName:label({text=function() return wgt.values.craft_name end,  x=15, y=20, font=FS.FONT_8 ,color=txtColor})
 
-    -- failed to arm flags
-    pMain:build({{type="box", x=100, y=25, visible=function() return wgt.values.arm_fail end,
-        children={
-            {type="rectangle", x=0, y=0, w=280, h=150, color=RED, filled=true, rounded=8, opacity=245},
-            {type="label", text=function()
-                return string.format("%s (%s)", wgt.values.arm_disable_flags_txt, wgt.values.arm_fail)
-            end, x=10, y=0, font=FS.FONT_8, color=WHITE},
-        }
-    }})
+    -- -- failed to arm flags
+    -- pMain:build({{type="box", x=100, y=25, visible=function() return wgt.values.arm_fail end,
+    --     children={
+    --         {type="rectangle", x=0, y=0, w=280, h=150, color=RED, filled=true, rounded=8, opacity=245},
+    --         {type="label", text=function()
+    --             return string.format("%s (%s)", wgt.values.arm_disable_flags_txt, wgt.values.arm_fail)
+    --         end, x=10, y=0, font=FS.FONT_8, color=WHITE},
+    --     }
+    -- }})
 
     -- -- no connection
     -- pMain:build({{type="box", x=330, y=10, visible=function() return wgt.is_connected==false end,

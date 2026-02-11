@@ -17,6 +17,7 @@ local perd1 = tools.periodicInit()
 local perd2 = tools.periodicInit()
 tools.periodicStart(perd1, 1000)
 tools.periodicStart(perd2, 100)
+local status_bar_height = 0
 
 local M = {}
 
@@ -106,9 +107,14 @@ M.slide = function(slide_dx)
 
 end
 
+M.height = function()
+    return status_bar_height
+end
+
 M.build_ui = function(parentBox, wgt)
     local nan_w, sb_h, v_offset = tools.lcdSizeTextFixed("XXXXXXXXXX", default_font_size)
     sb_h = sb_h + 7
+    status_bar_height = sb_h
     local bStatusBar = parentBox:box({x=0, y=wgt.zone.h-wgt.selfTopbarHeight-sb_h})
     local statusBarColor = lcd.RGB(0x0078D4)
 

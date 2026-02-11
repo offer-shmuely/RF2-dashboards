@@ -75,7 +75,7 @@ M.build_ui = function(wgt)
     pMain:build({{type="box", x=145, y=0,
         children={
             {type="label", text="Head Speed",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
-            {type="label", text=function() return wgt.values.rpm_str end, x=0, y=15, font=FS.FONT_16 ,color=txtColor},
+            {type="label", text=function() return string.format("%s",wgt.values.rpm) end, x=0, y=15, font=FS.FONT_16 ,color=txtColor},
         }
     }})
 
@@ -110,8 +110,8 @@ M.build_ui = function(wgt)
     local bCurr = pMain:box({x=2, y=g_y,
         children={
             {type="label", text="Current",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
-            {type="label", x=35, y=40, text=function() return wgt.values.curr_str end, font=FS.FONT_8, color=txtColor},
-            {type="label", x=30, y=65, text=function() return wgt.values.curr_max_str end, font=FS.FONT_8, color=txtColor},
+            {type="label", x=35, y=40, text=function() return string.format("%dA", wgt.values.curr) end, font=FS.FONT_8, color=txtColor},
+            {type="label", x=30, y=65, text=function() return string.format("+%dA", wgt.values.curr_max) end, font=FS.FONT_8, color=txtColor},
             {type="arc", x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, rounded=true, color=lcd.RGB(0x444444)},
             {type="arc", x=50, y=50, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_max_percent) end, color=lcd.RGB(0xFF623F), opacity=180},
             {type="arc", x=50, y=50, radius=g_rad , thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_percent)     end, color=lcd.RGB(0xFF623F)},
@@ -129,12 +129,12 @@ M.build_ui = function(wgt)
         }
     })
 
-    -- temp
+    -- Temperature
     pMain:box({x=2+4*g_rad+20, y=g_y,
         children={
             {type="label", text="temp",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
-            {type="label", x=35, y=40, text=function() return (wgt.values.EscT_str or "--°c") end, font=FS.FONT_8, color=txtColor},
-            {type="label", x=35, y=65, text=function() return (wgt.values.EscT_max_str or "--°c") end, font=FS.FONT_8, color=txtColor},
+            {type="label", x=35, y=40, text=function() return string.format("%d°c", wgt.values.EscT or "--°c") end, font=FS.FONT_8, color=txtColor},
+            {type="label", x=35, y=65, text=function() return string.format("+%d°c", wgt.values.EscT_max or "--°c") end, font=FS.FONT_8, color=txtColor},
             {type="arc", x=50, y=50, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, color=lcd.RGB(0x444444)},
             {type="arc", x=50, y=50, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_max_percent) end, color=lcd.RGB(0x1F96C2), opacity=180},
             {type="arc", x=50, y=50, radius=g_rad,  thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_percent)     end, color=lcd.RGB(0x1F96C2)},
@@ -152,7 +152,6 @@ M.build_ui = function(wgt)
 
     -- flights count
     pMain:build({{type="box", x=340, y=105,
-                    -- pos= function() return dbgx, dbgy end,
         children={
             {type="label", text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
             -- {type="label", text="Flights: ", x=50, y=2, font=FS.FONT_6, color=lcd.RGB(0x999999)},
@@ -177,7 +176,7 @@ M.build_ui = function(wgt)
         children={
             {type="rectangle", x=0, y=0, w=280, h=150, color=RED, filled=true, rounded=8, opacity=245},
             {type="label", text=function()
-                return string.format("%s (%s)", wgt.values.arm_disable_flags_txt, wgt.values.arm_fail)
+                return string.format("Arming not allowed: \n%s", wgt.values.arm_disable_flags_txt)
             end, x=10, y=0, font=FS.FONT_8, color=WHITE},
         }
     }})
@@ -195,16 +194,16 @@ M.build_ui = function(wgt)
     -- app_ver
     pMain:build({{type="box", x=LCD_W -50, y=LCD_H -80,
         children={
-            {type="label", text=function() return string.format("v: %s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
+            {type="label", text=function() return string.format("v%s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
         }
     }})
 
     -- status bar
     wgt.statusbar.init("VenbS & Shmuely", {
-        {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, error_color=RED, error_cond=function() return (wgt.values.link_rqly < 80) end },
-        {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.vbec,        wgt.values.vbec_min     ) end, color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.bec_voltage.isWarn() end },
+        {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, error_color=RED, error_cond=function() return (wgt.is_connected and wgt.values.link_rqly_min < 80) end },
+        {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.v_rx,        wgt.values.v_rx_min     ) end, color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.rx_voltage.isWarn() end },
         {name="Curr+:", ftxt=function() return string.format("A: %d/%dA",           wgt.values.curr,        wgt.values.curr_max     ) end},
-        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smW",         wgt.values.link_tx_power_max                    ) end},
+        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",         wgt.values.link_tx_power_max                    ) end},
         {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end},
     })
     wgt.statusbar.build_ui(pMain, wgt)

@@ -1,10 +1,16 @@
 local app_name = "RF2-dashboards"
-local app_ver = "2.2.14"
+local app_ver = "2.2.15"
 
 local baseDir = "/SCRIPTS/RF2-dashboards"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
 
 local timerNumber = 1
+
+-- constants
+local VCEL_LOW_THRESHOLD = 3.7
+local CAPA_LOW_PERCENT = 10
+local CAPA_MEDIUM_PERCENT = 30
+
 
 local err_img = bitmap.open(baseDir.."/img/no_connection_wr.png")
 
@@ -15,8 +21,9 @@ local dashboard_styles = {
     [2] = "dashboard_modern.lua",
 }
 local dashboard_post_styles = {
-    [1] = "dashboard_post_1.lua",
-    [2] = "dashboard_post_2.lua",
+    [1] = "dashboard_debug.lua", -- placeholder, same as flight dashboard
+    [2] = "dashboard_post_1.lua",
+    [3] = "dashboard_post_2.lua",
 }
 local dashboard_file_name = "dashboard_none.lua"
 local dashboard_post_file_name = "dashboard_post_1.lua"
@@ -33,7 +40,8 @@ local wgt = {
         craft_name = "-----",
         timer_str = "--:--",
         rpm = -1,
-        rpm_str = "---",
+        rpm_max = -1,
+        rpm_percent = -1,
         profile_id = -1,
         profile_id_str = "--",
         rate_id = -1,
@@ -44,13 +52,11 @@ local wgt = {
         vcel_min = -1,
         cell_percent = -1,
         volt = -1,
-        vbec = -1,
-        vbec_min = -1,
-        vbec_min_percent = -1,
+        v_rx = -1,
+        v_rx_min = -1,
+        -- v_rx_min_percent = -1,
         curr = 0,
         curr_max = 0,
-        curr_str = "0",
-        curr_max_str = "0",
         curr_percent = 0,
         curr_max_percent = 0,
         capaTotal = -1,
@@ -60,8 +66,6 @@ local wgt = {
 
         EscT = 0,
         EscT_max = 0,
-        EscT_str = "0",
-        EscT_max_str = "0",
         EscT_percent = 0,
         EscT_max_percent = 0,
 
@@ -92,7 +96,7 @@ local wgt = {
 local rf2_curr_model_static_data = {
     msp_api_version = nil,
     craft_id = nil,
-    craft_name= nil,
+    craft_name = nil,
     cell_count = 4,
     battery_capacity = nil,
     rescue_on = nil,
@@ -103,7 +107,6 @@ local rf2_curr_model_static_data = {
 
 --------------------------------------------------------------
 local function log(fmt, ...)
-    -- print(string.format("1111[%s] "..fmt, app_name, ...))
     m_log.info(fmt, ...)
     return
 end
@@ -179,11 +182,11 @@ local function formatTime(wgt, t1)
 
     local time_str
     if dd == 0 and hh == 0 then
-      -- less then 1 hour, 59:59
+      -- less than 1 hour, 59:59
       time_str = string.format("%02d:%02d", mm, ss)
 
     elseif dd == 0 then
-      -- lass then 24 hours, 23:59:59
+      -- less than 24 hours, 23:59:59
       time_str = string.format("%02d:%02d:%02d", hh, mm, ss)
     else
       -- more than 24 hours
@@ -243,23 +246,19 @@ local function updateTimeCount(wgt)
     wgt.values.timer_str = time_str
 end
 
-local function updateRpm(wgt)
-    local val = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.rpm)
-    local val_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.rpm)
-    -- local rpm_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.rpm)
-    wgt.values.rpm = val
-    wgt.values.rpm_str = string.format("%s",val)
-    wgt.values.rpm_max = val_max
-    wgt.values.rpm_max_str = string.format("%s",val_max)
+local function updateHeadspeed(wgt)
+    wgt.values.rpm = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.rpm)
+    wgt.values.rpm_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.rpm)
+    wgt.values.rpm_percent = (wgt.values.rpm_max > 0) and math.min(100, math.floor(100 * (wgt.values.rpm / wgt.values.rpm_max))) or 0
 end
 
 local function updateProfiles(wgt)
-    -- Current PID profile
+    -- current PID profile
     local val = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.pid_profile)
     wgt.values.profile_id = val
     wgt.values.profile_id_str = string.format("%s", wgt.values.profile_id)
 
-    -- Current Rate profile
+    -- current rate profile
     local val = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.rate_profile)
     wgt.values.rate_id = val
     wgt.values.rate_id_str = string.format("%s", wgt.values.rate_id)
@@ -282,7 +281,7 @@ local function updateCell(wgt)
     wgt.values.vcel_min = vcel_min
     wgt.values.cell_percent = batPercent
     wgt.values.volt = (wgt.options.showTotalVoltage==1) and vbat or vcel
-    wgt.values.cellColor = (vcel < 3.7) and RED or lcd.RGB(0x00963A) --GREEN
+    wgt.values.cellColor = (vcel < VCEL_LOW_THRESHOLD) and RED or lcd.RGB(0x00963A) --GREEN
 end
 
 local function updateCurr(wgt)
@@ -295,34 +294,26 @@ local function updateCurr(wgt)
     wgt.values.curr_max = val_max
     wgt.values.curr_percent = math.min(100, math.floor(100 * (val / curr_top)))
     wgt.values.curr_max_percent = math.min(100, math.floor(100 * (val_max / curr_top)))
-    wgt.values.curr_str = string.format("%dA", wgt.values.curr)
-    wgt.values.curr_max_str = string.format("+%dA", wgt.values.curr_max)
 end
 
 local function updateCapa(wgt)
     -- capacity
     local val  = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.capa)
-    -- local val = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.capa)
 
-    -- log("wgt.options.reserve_capa: %s", wgt.options.reserve_capa)
     wgt.values.capaTotal = (rf2_curr_model_static_data.battery_capacity or 0) * (100-wgt.options.reserve_capa) // 100
     wgt.values.capaUsed = val
 
-    if wgt.values.capaTotal == nil or wgt.values.capaTotal == nan or wgt.values.capaTotal ==0 then
+    if wgt.values.capaTotal==nil or wgt.values.capaTotal==nan or wgt.values.capaTotal==0 then
         wgt.values.capaTotal = -1
         wgt.values.capaUsed = 0
     end
 
-    if wgt.values.capaTotal == nil or wgt.values.capaTotal == nan or wgt.values.capaTotal ==0 then
-        wgt.values.capaTotal = -1
-        wgt.values.capaUsed = 0
-    end
     wgt.values.capaRemain = wgt.values.capaTotal - wgt.values.capaUsed
-    wgt.values.capaPercent = math.floor(100 * wgt.values.capaRemain // wgt.values.capaTotal)
+    wgt.values.capaPercent = (wgt.values.capaTotal > 0) and math.floor(100 * wgt.values.capaRemain // wgt.values.capaTotal) or 0
     local p = wgt.values.capaPercent
-    if (p < 10) then
+    if (p < CAPA_LOW_PERCENT) then
         wgt.values.capaColor = RED
-    elseif (p < 30) then
+    elseif (p < CAPA_MEDIUM_PERCENT) then
         wgt.values.capaColor = ORANGE
     else
         wgt.values.capaColor = lcd.RGB(0x00963A) --GREEN
@@ -331,14 +322,10 @@ local function updateCapa(wgt)
     wgt.values.capaPercent_txt = string.format("%d%%", wgt.values.capaPercent)
 end
 
-local function updateBecVoltage(wgt)
-    local vbec     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.bec_voltage)
-    local vbec_min = wgt.tlmEngine.valueMin(wgt.tlmEngine.sensorTable.bec_voltage)
-    -- log("updateBecVoltage:  vbec: %s, vbec_min: %s", vbec, vbec_min)
-
-    wgt.values.vbec = vbec
-    wgt.values.vbec_min = vbec_min
-    wgt.values.vbec_min_percent = math.min(100, math.floor(100 * (vbec_min / 8.4))) -- assuming 6.0v is max
+local function updateRxVoltage(wgt)
+    wgt.values.v_rx     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.rx_voltage)
+    wgt.values.v_rx_min = wgt.tlmEngine.valueMin(wgt.tlmEngine.sensorTable.rx_voltage)
+    -- log("updateRxVoltage:  v_rx: %s, v_rx_min: %s", v_rx, v_rx_min)
 end
 
 local function updateModelStats(wgt)
@@ -346,7 +333,6 @@ local function updateModelStats(wgt)
     -- log("[updateFlightStat] Total flights: [%s]", wgt.values.model_total_flights)
     wgt.values.model_total_time = rf2_curr_model_static_data.stats_total_time or 0
     wgt.values.model_total_time_str = formatTime(wgt, {value=wgt.values.model_total_time//60})
-
 end
 
 local function updateFlightStage(wgt)
@@ -371,7 +357,7 @@ local function updateArm(wgt)
 
     wgt.values.arm_disable_flags_list = {}
     wgt.values.arm_disable_flags_txt = ""
-    wgt.values.arm_fail = false
+    -- wgt.values.arm_fail = false
 
     if wgt.values.arm_fail == true then
         local flagList = wgt.tlmEngine.armingToolsArmDisabledFlags()
@@ -388,30 +374,23 @@ local function updateArm(wgt)
             for i in pairs(flagList) do
                 -- log("disableFlags: %s", i)
                 -- log("disableFlags: %s", flagList[i])
-                wgt.values.arm_disable_flags_txt = wgt.values.arm_disable_flags_txt .. flagList[i] .. "\n"
+                wgt.values.arm_disable_flags_txt = wgt.values.arm_disable_flags_txt .. "* " .. flagList[i] .. ".\n"
             end
         end
     end
 end
 
 local function updateThr(wgt)
-    local val     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.throttle_percent)
-    local val_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.throttle_percent)
-    wgt.values.thr = val
-    wgt.values.thr_max = val_max
+    wgt.values.thr     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.throttle_percent)
+    wgt.values.thr_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.throttle_percent)
 end
 
 local function updateTemperature(wgt)
     local tempTop = wgt.options.tempTop
-    local val = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.temp_esc)
-    local val_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.temp_esc)
-    wgt.values.EscT = val
-    wgt.values.EscT_max = val_max
+    wgt.values.EscT     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.temp_esc)
+    wgt.values.EscT_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.temp_esc)
 
-    wgt.values.EscT_str = string.format("%d°c", wgt.values.EscT)
-    wgt.values.EscT_max_str = string.format("+%d°c", wgt.values.EscT_max)
-
-    wgt.values.EscT_percent = math.min(100, math.floor(100 * (wgt.values.EscT / tempTop)))
+    wgt.values.EscT_percent     = math.min(100, math.floor(100 * (wgt.values.EscT / tempTop)))
     wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
 end
 
@@ -435,18 +414,18 @@ local function updateImage(wgt)
         return
     end
 
-    log("updateImage - craft name changed --> CraftName: %s, img_craft_image_name: %s", wgt.values.craft_name, wgt.values.img_craft_image_name)
+    log("updateImage - craft name changed --> craft_name: %s, img_craft_image_name: %s", wgt.values.craft_name, wgt.values.img_craft_image_name)
     wgt.values.img_last_key = newKey
 
     local filename = "/IMAGES/" .. wgt.values.craft_name .. ".png"
-    log("updateImage - is-exist image: %s", filename)
+    log("updateImage - checking image: %s", filename)
     if wgt.tools.isFileExist(filename) == true then
         log("updateImage - found image for model: %s", filename)
         wgt.values.img_craft_image_name = filename
         return
     end
     local filename = "/IMAGES/" .. wgt.values.craft_name .. ".jpg"
-    log("updateImage - is-exist image: %s", filename)
+    log("updateImage - checking image: %s", filename)
     if wgt.tools.isFileExist(filename) == true then
         log("updateImage - found image for model: %s", filename)
         wgt.values.img_craft_image_name = filename
@@ -454,7 +433,7 @@ local function updateImage(wgt)
     end
 
     local filename = "/IMAGES/" .. model.getInfo().bitmap
-    log("updateImage - is-exist image: %s", filename)
+    log("updateImage - checking image: %s", filename)
     if wgt.tools.isFileExist(filename) == true then
         log("updateImage - found image for craft: %s", filename)
         wgt.values.img_craft_image_name = filename
@@ -495,7 +474,6 @@ end
 
 local function update(wgt111, options)
     log("update")
-    -- if (wgt == nil) then return end
     wgt.options = options
     wgt.is_connected = false
     updateOnNoConnection()
@@ -515,21 +493,20 @@ local function update(wgt111, options)
     wgt.task_flight_stage.init()
 
 
-    log("isFullscreen: %s", lvgl.isFullScreen())
-    log("isAppMode: %s", lvgl.isAppMode())
+    log("is_fullscreen: %s", lvgl.isFullScreen())
+    log("is_app_mode: %s", lvgl.isAppMode())
 
     dashboard_file_name = dashboard_styles[wgt.options.guiStyle] or dashboard_styles[1]
     dashboard_post_file_name = dashboard_post_styles[wgt.options.guiStylePost] or dashboard_post_styles[1]
 
-    -- if user request no to replace
-    if wgt.options.guiStylePost == #dashboard_post_styles then
+    -- if user requested no post dashboard (same as flight dashboard)
+    -- if wgt.options.guiStylePost == #dashboard_post_styles then
+    if wgt.options.guiStylePost == 1 then
         dashboard_post_file_name = dashboard_file_name
     end
 
     wgt.isNeedTopbar = (wgt.zone.w == LCD_W and wgt.zone.h == LCD_H)
     wgt.selfTopbarHeight = wgt.isNeedTopbar and 40 or 0
-
-    --log("update: win size: %s,%s %sx%s %sx%s (is_full_area: %s)", wgt.zone.x, wgt.zone.y, wgt.zone.w, wgt.zone.h, LCD_W, LCD_H, wgt.isNeedTopbar)
 
     if lvgl.isFullScreen() then
         dashboard_file_name = "dashboard_app_mode.lua"
@@ -567,12 +544,12 @@ local function background(wgt)
     end
 
     updateTimeCount(wgt)
-    updateRpm(wgt)
+    updateHeadspeed(wgt)
     updateProfiles(wgt)
     updateCell(wgt)
     updateCurr(wgt)
     updateCapa(wgt)
-    updateBecVoltage(wgt)
+    updateRxVoltage(wgt)
     updateThr(wgt)
     updateTemperature(wgt)
     updateImage(wgt)

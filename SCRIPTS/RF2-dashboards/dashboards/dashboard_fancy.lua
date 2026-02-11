@@ -74,7 +74,7 @@ M.build_ui = function(wgt)
     pMain:build({{type="box", x=185, y=115,
         children={
             {type="label", text="RPM",  x=25, y=0, font=FS.FONT_6, color=titleGreyColor},
-            {type="label", text=function() return wgt.values.rpm_str end, x=0, y=10, font=FS.FONT_16 ,color=txtColor},
+            {type="label", text=function() return string.format("%s",wgt.values.rpm) end, x=0, y=10, font=FS.FONT_16 ,color=txtColor},
         }
     }})
 
@@ -103,8 +103,7 @@ M.build_ui = function(wgt)
     -- current
     local bCurr = pMain:box({x=350, y=155})
     bCurr:label({text="Current",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor})
-    -- bCurr:label({text=function() return wgt.values.curr_str end, x=0, y=12, font=FS.FONT_16 ,color=function() return (wgt.values.curr < 100) and YELLOW or RED end },
-    bCurr:label({text=function() return wgt.values.curr_str end, x=0, y=12, font=FS.FONT_16 ,color=txtColor})
+    bCurr:label({text=function() return string.format("%dA", wgt.values.curr) end, x=0, y=12, font=FS.FONT_16 ,color=txtColor})
 
     -- arm
     local bArm = pMain:box({x=140, y=5})
@@ -158,7 +157,7 @@ M.build_ui = function(wgt)
         children={
             {type="rectangle", x=0, y=0, w=280, h=150, color=RED, filled=true, rounded=8, opacity=245},
             {type="label", text=function()
-                return string.format("%s (%s)", wgt.values.arm_disable_flags_txt, wgt.values.arm_fail)
+                return string.format("Arming not allowed: \n%s", wgt.values.arm_disable_flags_txt)
             end, x=10, y=0, font=FS.FONT_8, color=WHITE},
         }
     }})
@@ -182,16 +181,16 @@ M.build_ui = function(wgt)
     -- app_ver
     pMain:build({{type="box", x=LCD_W -50, y=LCD_H -80,
         children={
-            {type="label", text=function() return string.format("v: %s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
+            {type="label", text=function() return string.format("v%s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
         }
     }})
 
     -- status bar
     wgt.statusbar.init("Shmuely", {
-        {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, error_color=RED, error_cond=function() return (wgt.values.link_rqly < 80) end },
-        {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.vbec,        wgt.values.vbec_min     ) end, color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.bec_voltage.isWarn() end },
+        {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, error_color=RED, error_cond=function() return wgt.values.link_rqly_min<80 end },
+        {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.v_rx,        wgt.values.v_rx_min     ) end, color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.rx_voltage.isWarn() end },
         {name="Curr+:", ftxt=function() return string.format("A: %d/%dA",           wgt.values.curr,        wgt.values.curr_max     ) end},
-        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smW",         wgt.values.link_tx_power_max                    ) end},
+        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",         wgt.values.link_tx_power_max                    ) end},
         {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end},
     })
     wgt.statusbar.build_ui(pMain, wgt)

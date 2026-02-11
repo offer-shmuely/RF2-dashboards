@@ -5,12 +5,33 @@ All notable changes to RF2-dashboard will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## next
+
+### Added
+- new second type of post-flight dashboard with bar-based layout
+- rx/bec voltage drop detection (warn at 0.5v drop, alert at 0.9v drop)
+- dynamic color calculation for post-flight arc gauges based on sensor thresholds
+- link quality (rqly) metric display on post-flight dashboard
+- do not prompt capacity warning when disconnected
+
+### Changed
+- updated rx voltage thresholds (warn: 15%/3.710v, alert: 7%/3.601v)
+- post-flight dashboard layout improvements:
+    - show max headspeed
+    - show used capacity
+
+### Fixed
+- link quality error condition now checks connection state
+- arm disable reason message display
+
+
+
 ## [2.2.14] - 2026-01
 - Add top-bar when widget layout doesn't include one
 - Improve dashboard selection logic
 - Enable transition from post-flight dashboard to regular dashboard on arm/disarm
 - Reset telemetry min/max values 4 seconds after connection (in addition to flight start)
-- Show warning message for EdgeTX versions below 2.11.3 (the widget used to disapear)
+- Show warning message for EdgeTX versions below 2.11.3 (the widget used to disappear)
 - unified color for warning on post-flight dashboard
 
 ---

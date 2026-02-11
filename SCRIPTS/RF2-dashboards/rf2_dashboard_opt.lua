@@ -5,26 +5,26 @@ local M = {
             "1-Fancy",
             "2-Modern",
         }},
-        {"guiStylePost" , CHOICE, 1 , {
-            "Replace to Sammary 1",
-            "Do not replace",
+        {"guiStylePost" , CHOICE, 3 , {
+            "Same as Flight Dashboard",
+            "Summary 1",
+            "Summary 2",
         }},
-        {"showTotalVoltage", BOOL  ,   0         }, -- 0=Show as average Lipo cell level, 1=show the total voltage (voltage as is)
-        -- {"enableCapa"   , BOOL, 1 },
-        {"currTop"         , VALUE , 150, 40,300 },
-        {"tempTop"         , VALUE ,  90, 30,150 },
-        {"textColor"       , COLOR , WHITE       },
-        {"reserve_capa"    , VALUE ,   0, 0,40   },
         {"enableAudio"     , BOOL  ,   1         }, -- 0=disable audio announcements, 1=enable audio announcements
+        {"showTotalVoltage", BOOL  ,   0         }, -- 0=Show as average Lipo cell level, 1=show the total voltage (voltage as is)
+        {"reserve_capa"    , VALUE ,   0, 0, 40  },
+        {"currTop"         , VALUE , 200, 60,400 },
+        {"tempTop"         , VALUE ,  80, 30,150 },
+        {"textColor"       , COLOR , WHITE       },
     },
 
     translate = function(name)
         local translations = {
-            showTotalVoltage="Show Total Voltage",
+            showTotalVoltage="Show Voltage as Total",
             -- enableCapa="Enable Capacity",
             -- useTelemetry="Use Telemetry (faster update)",
-            guiStyle="On Flight GUI Style",
-            guiStylePost="Post Flight GUI Style",
+            guiStyle="On Flight Dashboard",
+            guiStylePost="Post Flight Dashboard",
             currTop="Max Current",
             tempTop="Max ESC Temp",
             textColor="Text Color",

@@ -52,20 +52,21 @@ M.run = function(wgt)
     end
 
 
-    if new_capa_parted < 20 then
-        if m_clock() - last_capa_anounce > 10 then
-            log("task_capa_audio: time to play critical capacity")
-            playCapacityValue_by_percent(wgt)
-            last_capa_anounce = m_clock()
-        end
-    elseif new_capa_parted < 30 then
-        if m_clock() - last_capa_anounce > 20 then
-            log("task_capa_audio: time to play low capacity")
-            playCapacityValue_by_percent(wgt)
-            last_capa_anounce = m_clock()
+    if wgt.is_connected then
+        if new_capa_parted < 20 then
+            if m_clock() - last_capa_anounce > 10 then
+                log("task_capa_audio: time to play critical capacity")
+                playCapacityValue_by_percent(wgt)
+                last_capa_anounce = m_clock()
+            end
+        elseif new_capa_parted < 30 then
+            if m_clock() - last_capa_anounce > 20 then
+                log("task_capa_audio: time to play low capacity")
+                playCapacityValue_by_percent(wgt)
+                last_capa_anounce = m_clock()
+            end
         end
     end
-
     return 0
 end
 

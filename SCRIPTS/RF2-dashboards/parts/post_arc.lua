@@ -3,7 +3,59 @@ local M = {}
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 
-M.build_ui = function(parentBox, wgt, a_x, a_y, a_color, a_txt, f_val, f_percent, a_icon, sensor)
+local g_angel_min = 140
+local g_angel_max = 400
+
+
+local function calEndAngle(f_percent)
+    local percent = f_percent()
+    if percent==nil then return 0 end
+    local v = ((percent/100) * (g_angel_max-g_angel_min)) + g_angel_min
+    return v
+end
+
+local function calcColor(f_percent, sensor)
+    if sensor==nil then
+        return GREY
+    end
+
+    -- detection by alert/warn functions
+    if sensor.isAlert ~=nil or sensor.isWarn ~=nil then
+        if sensor.isAlert ~=nil and sensor.isAlert() then
+            return lcd.RGB(0xFF0000)
+        end
+        if sensor.isWarn ~=nil and sensor.isWarn() then
+            return lcd.RGB(0xFF8000)
+        end
+
+        return lcd.RGB(0x00FF00)
+    end
+
+
+    -- detection by percent thresholds
+    local low_warn = sensor.low_warning or -9999
+    local low_alert = sensor.low_alert or -9999
+    local high_warn = sensor.high_warning or 9999
+    local high_alert = sensor.high_alert or 9999
+
+    local val = f_percent()
+
+    if val>high_alert or val<low_alert then
+        return lcd.RGB(0xFF0000)
+    end
+    if val>high_warn or val<low_warn then
+        return lcd.RGB(0xFF8000)
+    end
+
+    -- everything is good
+    return lcd.RGB(0x00FF00)
+end
+
+M.build_ui = function(parentBox, wgt, a_x, a_y, a_color, a_txt,
+                        f_val,
+                        f_percent,
+                        a_icon,
+                        sensor)
 
     local titleGreyColor = LIGHTGREY
     local txtColor = wgt.options.textColor
@@ -14,34 +66,8 @@ M.build_ui = function(parentBox, wgt, a_x, a_y, a_color, a_txt, f_val, f_percent
     local gm_thick = 8
     local g_y1 = 5
     local g_y2 = 85
-    local g_angel_min = 140
-    local g_angel_max = 400
     local x_space = 10
 
-    local function calEndAngle(f_percent)
-        percent = f_percent()
-        if percent==nil then return 0 end
-        local v = ((percent/100) * (g_angel_max-g_angel_min)) + g_angel_min
-        return v
-    end
-    local function calcColor(f_percent, sensor)
-        if sensor==nil then
-            return GREY
-        end
-        local low_warn = sensor.low_warning or -9999
-        local low_alert = sensor.low_alert or -9999
-        local high_warn = sensor.high_warning or 9999
-        local high_alert = sensor.high_alert or 9999
-
-        local val = f_percent()
-        if val>high_alert or val<low_alert then
-            return lcd.RGB(0xFF0000)
-        end
-        if val>high_warn or val<low_warn then
-            return lcd.RGB(0xFF8000)
-        end
-        return lcd.RGB(0x00FF00)
-    end
 
     local highWarnVal = 9999
     local highAlertVal = 9999
