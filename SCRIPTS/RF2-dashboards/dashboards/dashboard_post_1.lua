@@ -8,11 +8,27 @@ local inSimu = arg[6]
 
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local lvSCALE = lvgl.LCD_SCALE or 1
+local is800 = (LCD_W==800)
 
 local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
 local lib_post_arc = assert(loadScript(baseDir .. "/parts/post_arc.lua", "btd"))()
 
 local M = {}
+
+local function lvglHPercent(p)
+    return math.floor(p * LCD_W/100)
+end
+local function lvglVPercent(p)
+    return math.floor(p * LCD_H/100)
+end
+local function lvglHFactor(p)
+    return math.floor(p * LCD_W / 480)
+end
+
+local function lvglVFactor(p)
+    return math.floor(p * LCD_H / 272)
+end
 
 M.build_ui = function(wgt)
     if (wgt == nil) then log("refresh(nil)") return end
@@ -25,120 +41,88 @@ M.build_ui = function(wgt)
     lvgl.clear()
 
     -- global
-    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
+    lvgl.rectangle({x=0, y=0, w=LCD_W*lvSCALE, h=LCD_H*lvSCALE, color=lcd.RGB(0x111111), filled=true})
 
     -- top bar
-    lvgl.box({x=0, y=0, w=LCD_W, h=40, visible=function() return wgt.isNeedTopbar end,
+    lvgl.box({x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, visible=function() return wgt.isNeedTopbar end,
         children={
-            {type="rectangle", x=0, y=0, w=LCD_W, h=40, color=DARKGREY, filled=true},
-            {type="label", x=60, y=2, font=FS.FONT_16, color=txtColor, text=function() return wgt.values.craft_name end},
-            {type="image", x=0, y=0, w=45, h=45, file="/SCRIPTS/RF2-dashboards/img/rf2_logo.png"},
+            {type="rectangle", x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, color=DARKGREY, filled=true},
+            {type="label", x=60*lvSCALE, y=2*lvSCALE, font=FS.FONT_16, color=txtColor, text=function() return wgt.values.craft_name end},
+            {type="image", x=0, y=0, w=45*lvSCALE, h=45*lvSCALE, file="/SCRIPTS/RF2-dashboards/img/rf2_logo.png"},
         }
     })
 
 
     -- main dashboard area
-    local pMain = lvgl.box({x=0, y=wgt.selfTopbarHeight})
-
+    local pMain = lvgl.box({x=0, y=wgt.selfTopbarHeight*lvSCALE})
 
     -- time
     pMain:build({
-        {type="box", x=370, y=130, children={
+        {type="box", x=370*lvSCALE, y=130*lvSCALE, children={
             {type="label", text="Time", x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
-            {type="label", text=function() return wgt.values.timer_str end, x=0, y=15, font=FS.FONT_16 ,color=txtColor},
+            {type="label", text=function() return wgt.values.timer_str end, x=0, y=15*lvSCALE, font=FS.FONT_16 ,color=txtColor},
         }}
     })
 
 
-    local g_rad = 40
-    local g_thick = 8--11
-    local gm_rad = g_rad-10
-    local gm_thick = 8
-    local g_y1 = 5
-    local g_y2 = 85
-    local g_angel_min = 140
-    local g_angel_max = 400
-    local x_space = 5
-    local function calEndAngle(percent)
-        if percent==nil then return 0 end
-        local v = ((percent/100) * (g_angel_max-g_angel_min)) + g_angel_min
-        return v
-    end
-    local bx = 5
-    local by = 5
-
     -- current
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Current",
+    lib_post_arc.build_ui(pMain, wgt, 1,1, lcd.RGB(0xFF623F), "Current",
         function() return string.format("+%dA", wgt.values.curr_max)  or "--A"end,
         function() return wgt.values.curr_max_percent end,
         nil,
         wgt.tlmEngine.sensorTable.current
     )
 
-    bx = bx + g_rad*2 + x_space
-
     -- temp
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0x1F96C2), "Esc Temp",
+    lib_post_arc.build_ui(pMain, wgt, 1,2, lcd.RGB(0x1F96C2), "Esc Temp",
         function() return string.format("+%d°c", wgt.values.EscT_max or "--°c") end,
         function() return wgt.values.EscT_max_percent end,
         "temperature.png",
         wgt.tlmEngine.sensorTable.temp_esc
     )
 
-    bx = bx + g_rad*2 + x_space
-
     -- thr
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFFA72C), "Throttle",
+    lib_post_arc.build_ui(pMain, wgt, 1,3, lcd.RGB(0xFFA72C), "Throttle",
         function() return string.format("%s%%", wgt.values.thr_max) end,
         function() return wgt.values.thr_max end,
         nil,
         wgt.tlmEngine.sensorTable.throttle_percent
     )
 
-    bx = bx + g_rad*2 + x_space
-
     -- rqly
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Link Quality",
+    lib_post_arc.build_ui(pMain, wgt, 1,4, lcd.RGB(0xFF623F), "Link Quality",
         function() return string.format("%s%%", wgt.values.link_rqly_min) end,
         function() return wgt.values.link_rqly_min end,
         nil,
         wgt.tlmEngine.sensorTable.link_rqly
     )
 
-    bx = 5
-    by = 110
-
     -- Battery
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Battery",
+    lib_post_arc.build_ui(pMain, wgt, 2,1, lcd.RGB(0xFF623F), "Battery",
         function() return string.format("%.02fv",  wgt.values.volt) end,
         function() return wgt.values.cell_percent end,
         nil,
         wgt.tlmEngine.sensorTable.batt_voltage
     )
-    bx = bx + g_rad*2 + x_space
 
     -- RxVoltage
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Rx Volt",
+    lib_post_arc.build_ui(pMain, wgt, 2,2, lcd.RGB(0xFF623F), "Rx Volt",
         function() return string.format("%.02fv", wgt.values.v_rx_min) end,
         function() return wgt.tlmEngine.sensorTable.rx_voltage.fPercent(wgt.values.v_rx_min) end,
         nil,
         wgt.tlmEngine.sensorTable.rx_voltage
     )
 
-    bx = bx + g_rad*2 + x_space
-
     -- headspeed
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Headspeed",
+    lib_post_arc.build_ui(pMain, wgt, 2,3, lcd.RGB(0xFF623F), "Headspeed",
         function() return string.format("%srpm", wgt.values.rpm_max) end,
         function() return wgt.values.rpm_percent end,
         nil,
         wgt.tlmEngine.sensorTable.rpm
     )
 
-    bx = bx + g_rad*2 + x_space
-
     -- capacity
-    lib_post_arc.build_ui(pMain, wgt, bx, by, lcd.RGB(0xFF623F), "Capacity",
+    lib_post_arc.build_ui(pMain, wgt, 2,4, lcd.RGB(0xFF623F), "Capacity",
         function() return string.format("%d%% (used: %dmah)", wgt.values.capaPercent, wgt.values.capaUsed or 0) end,
         function() return wgt.values.capaPercent or 0 end,
         nil,
@@ -160,7 +144,7 @@ M.build_ui = function(wgt)
     -- image
     local isizew=150
     local isizeh=100
-    pMain:box({x=330, y=5,
+    pMain:box({x=lvglHPercent(80) - isizew/2, y=5*lvSCALE,
         children={
             -- {type="rectangle", x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY},
             {type="image", x=0, y=0, w=isizew, h=isizeh, fill=false, file=function() return wgt.values.img_craft_image_name end}
@@ -168,7 +152,7 @@ M.build_ui = function(wgt)
     })
 
     -- flights count
-    pMain:build({{type="box", x=340, y=105,
+    pMain:build({{type="box", x=lvglHPercent(75), y=lvglVPercent(30),
         children={
             {type="label", x=0, y=0, font=FS.FONT_12 ,color=WHITE,
                 text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end
@@ -176,7 +160,7 @@ M.build_ui = function(wgt)
         }
     }})
     -- air time
-    pMain:build({{type="box", x=420, y=105,
+    pMain:build({{type="box", x=lvglHPercent(75), y=lvglVPercent(40),
         children={
             {type="label", x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999),
                 text=function() return string.format("%s Min", wgt.values.model_total_time_str or "---") end
@@ -185,7 +169,7 @@ M.build_ui = function(wgt)
     }})
 
     -- craft name
-    local bCraftName = pMain:box({x=330, y=60})
+    local bCraftName = pMain:box({x=lvglHPercent(70), y=lvglVPercent(20)})
     bCraftName:rectangle({x=10, y=20, w=isizew-20, h=20, filled=true, rounded=8, color=DARKGREY, opacity=200})
     bCraftName:label({text=function() return wgt.values.craft_name end,  x=15, y=20, font=FS.FONT_8 ,color=txtColor})
 

@@ -4,6 +4,7 @@ local M = {
         {"guiStyle"     , CHOICE, 1 , {
             "1-Fancy",
             "2-Modern",
+            "3-Nitro",
         }},
         {"guiStylePost" , CHOICE, 3 , {
             "Same as Flight Dashboard",
@@ -25,8 +26,8 @@ local M = {
             -- useTelemetry="Use Telemetry (faster update)",
             guiStyle="On Flight Dashboard",
             guiStylePost="Post Flight Dashboard",
-            currTop="Max Current",
-            tempTop="Max ESC Temp",
+            currTop="Warnning Current",
+            tempTop="Warnning ESC Temp",
             textColor="Text Color",
             enableAudio="Enable Audio Announcements",
             reserve_capa="Reserve Capacity %",

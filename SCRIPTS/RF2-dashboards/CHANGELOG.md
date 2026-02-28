@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## next
 
+## [2.2.16] - 2026-02
+- **Big Screen Support**: all dashboards updated to support the stunning 800px-wide display of the TX16mk3 ? every element, label, gauge and bar now scales dynamically with the screen resolution.
+
+### Added
+- new "Nitro" dashboard - focused on RX battery voltage display
+
+
+---
+
+## [2.2.15] - 2026-02
+
 ### Added
 - new second type of post-flight dashboard with bar-based layout
 - rx/bec voltage drop detection (warn at 0.5v drop, alert at 0.9v drop)

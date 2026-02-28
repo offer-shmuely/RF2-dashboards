@@ -2,31 +2,31 @@ local M = {}
 
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local lvSCALE = lvgl.LCD_SCALE or 1
+local is800 = (LCD_W==800)
+local function lvglPercent(p)
+    return math.floor((LCD_W - 20) * p / 100)
+end
 
-M.build_ui = function(  parentBox, wgt, a_x, a_y, a_color, a_txt, 
-                        f_val, f_percent, 
-                        a_icon, 
+M.build_ui = function(  parentBox, wgt, col, line, a_color, a_txt,
+                        f_val, f_percent,
+                        a_icon,
                         sensor)
 
+    local bx = 2*lvSCALE
+    local by = 65*lvSCALE
+    local dy = 29*lvSCALE
+    local theFont = FS.FONT_8
+    if is800 then
+        dy = 55
+        theFont = FS.FONT_12
+    end
+
+    local a_x = (col ==1) and 2*lvSCALE or lvglPercent(54)
+    local a_y = by + (line-1) * dy
     local titleGreyColor = LIGHTGREY
     local txtColor = wgt.options.textColor
 
-    local g_rad = 30
-    local g_thick = 8--11
-    local gm_rad = g_rad-10
-    local gm_thick = 8
-    local g_y1 = 5
-    local g_y2 = 85
-    local g_angel_min = 140
-    local g_angel_max = 400
-    local x_space = 10
-
-    local function calEndAngle(f_percent)
-        percent = f_percent()
-        if percent==nil then return 0 end
-        local v = ((percent/100) * (g_angel_max-g_angel_min)) + g_angel_min
-        return v
-    end
     local function calcColor(f_percent, sensor)
         if sensor==nil then
             return GREY
@@ -57,10 +57,14 @@ M.build_ui = function(  parentBox, wgt, a_x, a_y, a_color, a_txt,
     end
 
     local x1 = 0
-    local x2 = 75
-    local x3 = 120
+    local x2 = lvglPercent(15) --  75*lvSCALE
+    local x3 = lvglPercent(25) -- 120*lvSCALE
     local rect_h = 20
     local rect_w = 130
+    if is800 then
+        rect_h = 40
+        rect_w = 240
+    end
 
     local function calcBarWidth(f_percent)
         local percent = f_percent()
@@ -86,7 +90,7 @@ M.build_ui = function(  parentBox, wgt, a_x, a_y, a_color, a_txt,
 
                 -- shadow
                 {type="rectangle",x=x3-5,y=1,w=50,h=rect_h-2,color=lcd.RGB(0x000000),filled=true,opacity=60, rounded=4},
-                {type="label",x=x3,y=0,text= f_val,font=FS.FONT_8,color=txtColor},
+                {type="label",x=x3,y=0,text= f_val,font=theFont,color=txtColor},
             }
         }
     })

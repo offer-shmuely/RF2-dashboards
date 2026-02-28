@@ -15,6 +15,8 @@ local lcd = lcd
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 M.FS = FS
 M.FONT_LIST = {FS.FONT_6, FS.FONT_8, FS.FONT_12, FS.FONT_16, FS.FONT_38}
+local lvSCALE = lvgl.LCD_SCALE or 1
+
 
 ---------------------------------------------------------------------------------------------------
 local function log(fmt, ...)
@@ -309,21 +311,21 @@ function M.lcdSizeTextFixed(txt, font_size)
 
     local v_offset = 0
     if font_size == FS.FONT_38 then
-        v_offset = -6
-        ts_h = 52
+        v_offset = -6*lvSCALE
+        ts_h = 52*lvSCALE
         ts_w=ts_w-3
     elseif font_size == FS.FONT_16 then
-        v_offset = -6
-        ts_h = 28
+        v_offset = -6*lvSCALE
+        ts_h = 28*lvSCALE
     elseif font_size == FS.FONT_12 then
-        v_offset = -5
-        ts_h = 20
+        v_offset = -5*lvSCALE
+        ts_h = 20*lvSCALE
     elseif font_size == FS.FONT_8 then
-        v_offset = -3
-        ts_h = 15
+        v_offset = -3*lvSCALE
+        ts_h = 15*lvSCALE
     elseif font_size == FS.FONT_6 then
-        v_offset = -2
-        ts_h = 14
+        v_offset = -2*lvSCALE
+        ts_h = 14*lvSCALE
     end
     return ts_w, ts_h, v_offset
 end
@@ -458,6 +460,23 @@ M.getCellPercent = function(cellValue)
 
     return 0
 end
+
+M.calcCellCount = function(singleVoltage)
+    local topCellVoltage_lipo = 4.30
+    local topCellVoltage = topCellVoltage_lipo
+
+    for i = 1, 12 do
+        -- log("calcCellCount %s <? %s", singleVoltage, topCellVoltage*i)
+        if singleVoltage < topCellVoltage*i then
+            -- log("calcCellCount %s --> %s", singleVoltage, i)
+            return i
+        end
+    end
+
+    log("no match found" .. singleVoltage)
+    return 1
+end
+
 
 M.isFileExist = function(file_name)
     -- log("is_file_exist()")

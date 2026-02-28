@@ -1,5 +1,5 @@
 local app_name = "RF2-dashboards"
-local app_ver = "2.2.15"
+local app_ver = "2.2.16"
 
 local baseDir = "/SCRIPTS/RF2-dashboards"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
@@ -19,6 +19,7 @@ local m_log = loadScript(baseDir.."/lib_log.lua", "btd")(app_name, baseDir)
 local dashboard_styles = {
     [1] = "dashboard_fancy.lua",
     [2] = "dashboard_modern.lua",
+    [3] = "dashboard_nitro.lua",
 }
 local dashboard_post_styles = {
     [1] = "dashboard_debug.lua", -- placeholder, same as flight dashboard
@@ -54,6 +55,7 @@ local wgt = {
         volt = -1,
         v_rx = -1,
         v_rx_min = -1,
+        v_rx_percent = -1,
         -- v_rx_min_percent = -1,
         curr = 0,
         curr_max = 0,
@@ -325,7 +327,12 @@ end
 local function updateRxVoltage(wgt)
     wgt.values.v_rx     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.rx_voltage)
     wgt.values.v_rx_min = wgt.tlmEngine.valueMin(wgt.tlmEngine.sensorTable.rx_voltage)
-    -- log("updateRxVoltage:  v_rx: %s, v_rx_min: %s", v_rx, v_rx_min)
+
+
+    wgt.values.v_rx_cell_count = wgt.tools.calcCellCount(wgt.values.v_rx)
+    local vcel = wgt.values.v_rx_cell_count > 0 and (wgt.values.v_rx / wgt.values.v_rx_cell_count) or 0
+    wgt.values.v_rx_percent = wgt.tools.getCellPercent(vcel)
+    -- log("updateRxVoltage:  v_rx: %s, v_rx_min: %s, %s%% (cell:%s)", wgt.values.v_rx, wgt.values.v_rx_min, wgt.values.v_rx_percent, wgt.values.v_rx_cell_count)
 end
 
 local function updateModelStats(wgt)
@@ -472,9 +479,10 @@ local function onFlightStateChanged(oldState, newState)
     end
 end
 
-local function update(wgt111, options)
+local function update(wgt_new, options)
     log("update")
     wgt.options = options
+    wgt.zone = wgt_new.zone
     wgt.is_connected = false
     updateOnNoConnection()
 
