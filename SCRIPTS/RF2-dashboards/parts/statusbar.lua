@@ -5,14 +5,16 @@ local tools = args[3]
 
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local lvSCALE = lvgl.LCD_SCALE or 1
+local is800 = (LCD_W==800)
 
 local values_elements_array = {
---  {name="abc", value_func=f, units="%", x=0, width=60, full_txt=""}
+    --  {name="abc", value_func=f, units="%", x=0, width=60, full_txt=""}
 }
 
 local dev_name = ""
 
-local default_font_size = (LCD_H>272) and FS.FONT_8 or FS.FONT_6
+local default_font_size = (LCD_H > 272) and FS.FONT_8 or FS.FONT_6
 local perd1 = tools.periodicInit()
 local perd2 = tools.periodicInit()
 tools.periodicStart(perd1, 1000)
@@ -60,7 +62,7 @@ M.streach = function()
     local last_x = 0
     for i, elem in pairs(values_elements_array) do
         local txt = elem.value_func()
-        local ts_w1, ts_h1, v_offset = tools.lcdSizeTextFixed(txt , default_font_size)
+        local ts_w1, ts_h1, v_offset = tools.lcdSizeTextFixed(txt, default_font_size)
         if values_elements_array[i].name == "|" then
             elem.width = separator_width()
         else
@@ -85,12 +87,12 @@ M.slide = function(slide_dx)
     -- log("lib_statusbar slide()")
     head_x = head_x - slide_dx
     local first_elem = values_elements_array[1]
-    if head_x + first_elem.dx + first_elem.width//2 < 0 then
+    if head_x + first_elem.dx + first_elem.width // 2 < 0 then
         -- remove first element and add to end
         -- log("slide elem [%s] off screen (size before remove: %s)", first_elem.name, #values_elements_array )
         table.remove(values_elements_array, 1)
         -- log("slide elem [%s] off screen (size after remove: %s)", first_elem.name, #values_elements_array )
-        values_elements_array[#values_elements_array+1] = first_elem
+        values_elements_array[#values_elements_array + 1] = first_elem
         -- log("slide elem [%s] off screen (size after add: %s)", first_elem.name, #values_elements_array )
         head_x = head_x + first_elem.width
     end
@@ -115,10 +117,10 @@ M.build_ui = function(parentBox, wgt)
     local nan_w, sb_h, v_offset = tools.lcdSizeTextFixed("XXXXXXXXXX", default_font_size)
     sb_h = sb_h + 7
     status_bar_height = sb_h
-    local bStatusBar = parentBox:box({x=0, y=wgt.zone.h-wgt.selfTopbarHeight-sb_h})
+    local bStatusBar = parentBox:box({x=0, y=wgt.zone.h-wgt.selfTopbarHeight*lvSCALE-sb_h})
     local statusBarColor = lcd.RGB(0x0078D4)
 
-    bStatusBar:rectangle({x=0, y=0,w=wgt.zone.w, h=sb_h, color=statusBarColor, filled=true})
+    bStatusBar:rectangle({x=0, y=0, w=wgt.zone.w, h=sb_h, color=statusBarColor, filled=true})
     -- bStatusBar:rectangle({x=25, y=0,w=70, h=ts_h2, color=RED, filled=true, visible=function() return (wgt.values.link_rqly < 80) end })
 
     local dev_w, dev_h, dev_v_offset = tools.lcdSizeTextFixed(dev_name, default_font_size)

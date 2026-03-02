@@ -22,7 +22,11 @@ local function getFlightStats(callback, callbackParam, config)
             config.statsEnabled.value = config.stats_min_armed_time_s.value ~= -1 and 1 or 0
             if callback then callback(callbackParam, config) end
         end,
-        simulatorResponse = { 123,1,0,0, 100,1,2,0, 0,0,0,0, 15}
+        simulatorResponse = {
+            123,1,0,0, -- 379 flights
+            100,1,2,0, -- 300 seconds (5 minutes)
+            0,0,0,0,15 -- 0 meters, 15 seconds min armed time
+        }
     }
     rf2.mspQueue:add(message)
 end

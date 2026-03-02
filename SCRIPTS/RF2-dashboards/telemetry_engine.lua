@@ -90,7 +90,7 @@ sensorTable = {
         isWarn = function()
             local dv = sensorTable.rx_voltage.lastValueMax - sensorTable.rx_voltage.lastValueMin
             if dv > 0.5 then
-                log("rx_voltage.isWarn() called, dv=%s (min: %s, max: %s)", dv, sensorTable.rx_voltage.lastValueMin, sensorTable.rx_voltage.lastValueMax)
+                -- log("rx_voltage.isWarn() called, dv=%s (min: %s, max: %s)", dv, sensorTable.rx_voltage.lastValueMin, sensorTable.rx_voltage.lastValueMax)
                 return true
             end
             -- log("rx_voltage.isWarn() called, v=%s", v)

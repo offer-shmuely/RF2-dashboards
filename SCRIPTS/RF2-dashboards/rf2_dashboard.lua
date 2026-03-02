@@ -21,79 +21,23 @@ local dashboard_styles = {
     [2] = "dashboard_modern.lua",
     [3] = "dashboard_nitro.lua",
 }
+local default_dashboard_style = dashboard_styles[1]
+local dashboard_file_name = default_dashboard_style
+local curr_dashboard = nil
+
 local dashboard_post_styles = {
     [1] = "dashboard_debug.lua", -- placeholder, same as flight dashboard
     [2] = "dashboard_post_1.lua",
     [3] = "dashboard_post_2.lua",
 }
-local dashboard_file_name = "dashboard_none.lua"
-local dashboard_post_file_name = "dashboard_post_1.lua"
-local curr_dashboard = nil
+local dashboard_post_styles_do_not_change = dashboard_post_styles[1]
+local dashboard_post_styles_default = dashboard_post_styles[2]
+local dashboard_post_file_name = dashboard_post_styles_default
 
 local runningInSimulator = string.sub(select(2, getVersion()), -4) == "simu"
 local function m_clock()
     return getTime() / 100
 end
-
-local wgt = {
-    app_ver = app_ver,
-    values = {
-        craft_name = "-----",
-        timer_str = "--:--",
-        rpm = -1,
-        rpm_max = -1,
-        rpm_percent = -1,
-        profile_id = -1,
-        profile_id_str = "--",
-        rate_id = -1,
-        rate_id_str = "--",
-
-        vbat = -1,
-        vcel = -1,
-        vcel_min = -1,
-        cell_percent = -1,
-        volt = -1,
-        v_rx = -1,
-        v_rx_min = -1,
-        v_rx_percent = -1,
-        -- v_rx_min_percent = -1,
-        curr = 0,
-        curr_max = 0,
-        curr_percent = 0,
-        curr_max_percent = 0,
-        capaTotal = -1,
-        capaUsed = -1,
-        capaPercent = -1,
-        capaPercent_txt = "---",
-
-        EscT = 0,
-        EscT_max = 0,
-        EscT_percent = 0,
-        EscT_max_percent = 0,
-
-        link_rqly = 0,
-        link_rqly_min = 0,
-
-        -- governor_str = "-------",
-        is_arm = false,
-        arm_fail = false,
-        arm_disable_flags_list = nil,
-        arm_disable_flags_txt = "",
-        flight_stage = -1,
-        flight_stage_str = "---",
-
-        img_last_key = "---",
-        img_craft_image_name = "---",
-
-        thr = 0,
-        thr_max = 0,
-
-        -- model stats
-        model_total_flights = nil,
-        model_total_time = nil,
-        model_total_time_str = "---",
-    },
-}
 
 local rf2_curr_model_static_data = {
     msp_api_version = nil,
@@ -138,32 +82,31 @@ end
 
 -----------------------------------------------------------------------------------------------------------------
 
-dbg_layout_enabled = false
-dbgx, dbgy = 100, 100
 local function getDxByStick(stk)
     local v = getValue(stk)
-    if math.abs(v) < 15 then return 0 end
+    if math.abs(v) < 5 then return 0 end
     local d = math.ceil(v / 400)
     return d
 end
-local function dbgLayout()
-    dbg_layout_enabled = true
+local function dbgLayout(wgt)
+    wgt.dbg_layout_enabled = true
+
     local dw = getDxByStick("ail")
-    dbgx = dbgx + dw
-    dbgx = math.max(0, math.min(480, dbgx))
+    wgt.dbgx = wgt.dbgx + dw
+    wgt.dbgx = math.max(0, math.min(480, wgt.dbgx))
 
     local dh = getDxByStick("ele")
-    dbgy = dbgy - dh
-    dbgy = math.max(0, math.min(272, dbgy))
-    -- log("%sx%s", dbgx, dbgy)
+    wgt.dbgy = wgt.dbgy - dh
+    wgt.dbgy = math.max(0, math.min(272, wgt.dbgy))
+    -- log("%sx%s", wgt.dbgx, wgt.dbgy)
 end
-local function dbg_pos()
-    log("dbg_pos: %sx%s", dbgx, dbgy)
-    return dbgx, dbgy
+local function dbg_pos(wgt)
+    log("dbg_pos: %sx%s", wgt.dbgx, wgt.dbgy)
+    return wgt.dbgx, wgt.dbgy
 end
-local function dbg_x()
-    log("dbg_pos: %sx%s", dbgx, dbgy)
-    return dbgx
+local function dbg_x(wgt)
+    log("dbg_pos: %sx%s", wgt.dbgx, wgt.dbgy)
+    return wgt.dbgx
 end
 
 local function formatTime(wgt, t1)
@@ -220,13 +163,13 @@ end
 
 -------------------------------------------------------------------
 
-local dbgReplImg = 0
+local is_dbg_craft_change = false
+local dbgReplImgTime = 0
 local dbgImgTp = 0
 local function updateCraftName(wgt)
-    local is_dbg_craft_change = false
 
     if is_dbg_craft_change == true then
-        if (m_clock() - dbgReplImg > 5) then
+        if (m_clock() - dbgReplImgTime > 5) then
             log("updateCraftName - interval")
             dbgImgTp = dbgImgTp + 1
             if dbgImgTp % 2 == 0 then
@@ -235,11 +178,54 @@ local function updateCraftName(wgt)
                 wgt.values.craft_name = "sab580"
             end
             log("updateCraftName - CraftName: %s", wgt.values.craft_name)
-            dbgReplImg = m_clock()
+            dbgReplImgTime = m_clock()
         end
     else
         wgt.values.craft_name = rf2_curr_model_static_data.craft_name
     end
+end
+
+local function calcImageKey(wgt)
+    local modelCraftName = model.getInfo().bitmap
+    local key = wgt.values.craft_name .. "|" .. modelCraftName
+    -- log("updateImage - imageKey: %s", key)
+    return key
+end
+
+local function updateImage(wgt)
+    local newKey = calcImageKey(wgt)
+    if wgt.values.img_last_key == newKey then
+        -- log("updateImage - image key not changed")
+        return
+    end
+
+    log("updateImage - craft name changed --> craft_name: %s, img_craft_image_name: %s", wgt.values.craft_name, wgt.values.img_craft_image_name)
+    wgt.values.img_last_key = newKey
+
+    local filename = "/IMAGES/" .. wgt.values.craft_name .. ".png"
+    log("updateImage - checking image: %s", filename)
+    if wgt.tools.isFileExist(filename) == true then
+        log("updateImage - found image for model: %s", filename)
+        wgt.values.img_craft_image_name = filename
+        return
+    end
+    local filename = "/IMAGES/" .. wgt.values.craft_name .. ".jpg"
+    log("updateImage - checking image: %s", filename)
+    if wgt.tools.isFileExist(filename) == true then
+        log("updateImage - found image for model: %s", filename)
+        wgt.values.img_craft_image_name = filename
+        return
+    end
+
+    local filename = "/IMAGES/" .. model.getInfo().bitmap
+    log("updateImage - checking image: %s", filename)
+    if wgt.tools.isFileExist(filename) == true then
+        log("updateImage - found image for craft: %s", filename)
+        wgt.values.img_craft_image_name = filename
+        return
+    end
+
+    wgt.values.img_craft_image_name = baseDir.."/img/rf2_logo.png"
 end
 
 local function updateTimeCount(wgt)
@@ -320,8 +306,6 @@ local function updateCapa(wgt)
     else
         wgt.values.capaColor = lcd.RGB(0x00963A) --GREEN
     end
-
-    wgt.values.capaPercent_txt = string.format("%d%%", wgt.values.capaPercent)
 end
 
 local function updateRxVoltage(wgt)
@@ -336,10 +320,24 @@ local function updateRxVoltage(wgt)
 end
 
 local function updateModelStats(wgt)
-    wgt.values.model_total_flights = rf2_curr_model_static_data.total_flights -- or nil
+    -- get GV9 (index = 0) from Flight mode 0 (FM0)
+    local flight_count_from_flight_widget = model.getGlobalVariable(8, 0)
+    local flight_count_from_firmware_2_4 = rf2_curr_model_static_data.total_flights
+    local num_flights
+    if (flight_count_from_firmware_2_4 == nil or flight_count_from_firmware_2_4 ==0)
+        and flight_count_from_flight_widget ~= nil
+        and flight_count_from_flight_widget >= 0
+        then
+
+        num_flights = flight_count_from_flight_widget
+    else
+        num_flights = flight_count_from_firmware_2_4
+    end
+
+    wgt.values.model_total_flights = num_flights
     -- log("[updateFlightStat] Total flights: [%s]", wgt.values.model_total_flights)
-    wgt.values.model_total_time = rf2_curr_model_static_data.stats_total_time or 0
-    wgt.values.model_total_time_str = formatTime(wgt, {value=wgt.values.model_total_time//60})
+    -- wgt.values.model_total_time = rf2_curr_model_static_data.stats_total_time or 0
+    -- wgt.values.model_total_time_str = formatTime(wgt, {value=wgt.values.model_total_time//60})
 end
 
 local function updateFlightStage(wgt)
@@ -351,20 +349,8 @@ local function updateArm(wgt)
     wgt.values.is_arm           = wgt.tlmEngine.armingToolsIsArmed()
     wgt.values.is_arm_requested = wgt.tlmEngine.armingToolsIsArmRequested()
     wgt.values.arm_fail = (wgt.values.is_arm_requested == true and wgt.values.is_arm == false)
-
-    -- if flags == nil then
-    --     wgt.values.arm_disable_flags_list = {}
-    --     wgt.values.arm_disable_flags_txt = "---"
-    --     wgt.values.arm_fail = false
-    --     return
-    -- end
-
-    -- flags = 0x31090186
-    -- rf2.log("disableFlags: flags:%s", flags)
-
     wgt.values.arm_disable_flags_list = {}
     wgt.values.arm_disable_flags_txt = ""
-    -- wgt.values.arm_fail = false
 
     if wgt.values.arm_fail == true then
         local flagList = wgt.tlmEngine.armingToolsArmDisabledFlags()
@@ -373,9 +359,6 @@ local function updateArm(wgt)
         end
 
         wgt.values.arm_disable_flags_list = flagList
-        -- wgt.values.arm_disable_flags_txt = ""
-        -- wgt.values.arm_fail = false
-
         -- log("disableFlags len: %s", #flagList)
         if (#flagList > 0) then
             for i in pairs(flagList) do
@@ -408,49 +391,7 @@ local function updateELRS(wgt)
     wgt.values.link_tx_power_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.link_tx_power)
 end
 
-local function calcImageKey(wgt)
-    local modleCraftName = model.getInfo().bitmap
-    local key = wgt.values.craft_name .. "|" .. modleCraftName
-    -- log("updateImage - imageKey: %s", key)
-    return key
-end
-local function updateImage(wgt)
-    local newKey = calcImageKey(wgt)
-    if wgt.values.img_last_key == newKey then
-        -- log("updateImage - image key not changed")
-        return
-    end
-
-    log("updateImage - craft name changed --> craft_name: %s, img_craft_image_name: %s", wgt.values.craft_name, wgt.values.img_craft_image_name)
-    wgt.values.img_last_key = newKey
-
-    local filename = "/IMAGES/" .. wgt.values.craft_name .. ".png"
-    log("updateImage - checking image: %s", filename)
-    if wgt.tools.isFileExist(filename) == true then
-        log("updateImage - found image for model: %s", filename)
-        wgt.values.img_craft_image_name = filename
-        return
-    end
-    local filename = "/IMAGES/" .. wgt.values.craft_name .. ".jpg"
-    log("updateImage - checking image: %s", filename)
-    if wgt.tools.isFileExist(filename) == true then
-        log("updateImage - found image for model: %s", filename)
-        wgt.values.img_craft_image_name = filename
-        return
-    end
-
-    local filename = "/IMAGES/" .. model.getInfo().bitmap
-    log("updateImage - checking image: %s", filename)
-    if wgt.tools.isFileExist(filename) == true then
-        log("updateImage - found image for craft: %s", filename)
-        wgt.values.img_craft_image_name = filename
-        return
-    end
-
-    wgt.values.img_craft_image_name = baseDir.."/img/rf2_logo.png"
-end
-
-local function updateOnNoConnection()
+local function updateOnNoConnection(wgt)
     wgt.values.arm_disable_flags_txt = ""
     wgt.values.arm_fail = false
     wgt.not_connected_error = "no connection to RF2 FC"
@@ -458,7 +399,7 @@ end
 
 ---------------------------------------------------------------------------------------
 
-local function onFlightStateChanged(oldState, newState)
+local function onFlightStateChanged(wgt, oldState, newState)
     log("onFlightStateChanged: %s", newState)
 
     if newState == wgt.task_flight_stage.FLIGHT_STATE.PRE_FLIGHT then
@@ -479,12 +420,91 @@ local function onFlightStateChanged(oldState, newState)
     end
 end
 
-local function update(wgt_new, options)
+local function update(wgt, options)
     log("update")
-    wgt.options = options
-    wgt.zone = wgt_new.zone
+    wgt.app_ver = app_ver
+    wgt.dbg_layout_enabled = false
+    wgt.dbgx = 100
+    wgt.dbgy = 100
+
+    wgt.values = {
+        craft_name = "-----",
+        timer_str = "--:--",
+        rpm = -1,
+        rpm_max = -1,
+        rpm_percent = -1,
+        profile_id = -1,
+        profile_id_str = "--",
+        rate_id = -1,
+        rate_id_str = "--",
+
+        vbat = -1,
+        vcel = -1,
+        vcel_min = -1,
+        cell_percent = -1,
+        volt = -1,
+        v_rx = -1,
+        v_rx_min = -1,
+        v_rx_percent = -1,
+        -- v_rx_min_percent = -1,
+        curr = 0,
+        curr_max = 0,
+        curr_percent = 0,
+        curr_max_percent = 0,
+        capaTotal = -1,
+        capaUsed = -1,
+        capaPercent = -1,
+
+        EscT = 0,
+        EscT_max = 0,
+        EscT_percent = 0,
+        EscT_max_percent = 0,
+
+        link_rqly = 0,
+        link_rqly_min = 0,
+
+        -- governor_str = "-------",
+        is_arm = false,
+        arm_fail = false,
+        arm_disable_flags_list = nil,
+        arm_disable_flags_txt = "",
+        flight_stage = -1,
+        flight_stage_str = "---",
+
+        img_last_key = "---",
+        img_craft_image_name = "---",
+
+        thr = 0,
+        thr_max = 0,
+
+        -- model stats
+        model_total_flights = nil,
+        model_total_time = nil,
+        model_total_time_str = "---",
+
+    }
+
+    wgt.isNeedTopbar = (wgt.zone.w == LCD_W and wgt.zone.h == LCD_H)
+    wgt.selfTopbarHeight = wgt.isNeedTopbar and 40 or 0
+
+    dashboard_file_name = dashboard_styles[wgt.options.guiStyle] or default_dashboard_style
+    dashboard_post_file_name = dashboard_post_styles[wgt.options.guiStylePost] or dashboard_post_styles_default
+
+    -- if user requested no post dashboard (same as flight dashboard)
+    -- if wgt.options.guiStylePost == #dashboard_post_styles then
+    if wgt.options.guiStylePost == 1 then
+        dashboard_post_file_name = dashboard_file_name
+    end
+
+
+    if lvgl.isFullScreen() then
+        dashboard_file_name = "dashboard_app_mode.lua"
+    end
+
+    -- wgt.options = options
+    -- wgt.zone = wgt_new.zone
     wgt.is_connected = false
-    updateOnNoConnection()
+    updateOnNoConnection(wgt)
 
     wgt.tools     = assert(loadScript(baseDir .. "/lib_widget_tools.lua", "btd"))(m_log, app_name)
     wgt.statusbar = assert(loadScript(baseDir .. "/parts/statusbar.lua",  "btd"))(m_log.info, app_name, wgt.tools)
@@ -497,36 +517,19 @@ local function update(wgt_new, options)
     wgt.task_capa_audio = loadScript(baseDir .. "/tasks/task_capa_audio.lua", "btd")(baseDir, log, app_name)
     wgt.task_capa_audio.init()
 
-    wgt.task_flight_stage = loadScript(baseDir .. "/tasks/task_flight_stage.lua", "btd")(baseDir, log, app_name, onFlightStateChanged)
+    wgt.task_flight_stage = loadScript(baseDir .. "/tasks/task_flight_stage.lua", "btd")(wgt, baseDir, log, app_name, onFlightStateChanged)
     wgt.task_flight_stage.init()
-
 
     log("is_fullscreen: %s", lvgl.isFullScreen())
     log("is_app_mode: %s", lvgl.isAppMode())
 
-    dashboard_file_name = dashboard_styles[wgt.options.guiStyle] or dashboard_styles[1]
-    dashboard_post_file_name = dashboard_post_styles[wgt.options.guiStylePost] or dashboard_post_styles[1]
-
-    -- if user requested no post dashboard (same as flight dashboard)
-    -- if wgt.options.guiStylePost == #dashboard_post_styles then
-    if wgt.options.guiStylePost == 1 then
-        dashboard_post_file_name = dashboard_file_name
-    end
-
-    wgt.isNeedTopbar = (wgt.zone.w == LCD_W and wgt.zone.h == LCD_H)
-    wgt.selfTopbarHeight = wgt.isNeedTopbar and 40 or 0
-
-    if lvgl.isFullScreen() then
-        dashboard_file_name = "dashboard_app_mode.lua"
-    end
     log("update: gui style: %s", dashboard_file_name)
     build_ui(wgt, dashboard_file_name)
     return wgt
 end
 
 local function create(zone, options)
-    wgt.zone = zone
-    wgt.options = options
+    local wgt = {zone=zone, options=options}
     return update(wgt, options)
 end
 
@@ -569,7 +572,7 @@ local function background(wgt)
     wgt.task_flight_stage.run(wgt)
 
     if wgt.is_connected == false then
-        updateOnNoConnection()
+        updateOnNoConnection(wgt)
         return
     end
 
@@ -590,7 +593,7 @@ local function refresh(wgt, event, touchState)
     if curr_dashboard.refresh ~= nil then
         curr_dashboard.refresh(wgt, event, touchState)
     end
---    dbgLayout()
+--    dbgLayout(wgt)
 end
 
 return {create=create, update=update, background=background, refresh=refresh}

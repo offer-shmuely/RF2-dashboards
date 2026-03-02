@@ -71,7 +71,7 @@ M.build_ui = function(parentBox, wgt, line, col, a_color, a_txt,
     local x_space = 10*lvSCALE
     local y_space = 30*lvSCALE
     local text = {
-        x=is800 and 160 or 15,
+        x=is800 and 0 or 15,
         y=is800 and 80 or 70}
 
 
@@ -82,23 +82,21 @@ M.build_ui = function(parentBox, wgt, line, col, a_color, a_txt,
         highAlertVal = sensor.high_alert
     end
 
-    parentBox:build({
-        {type="box", x=(col-1)* (g_rad*2 + x_space), y=(line-1) * (g_rad*2 + y_space),
-            children={
-                -- {type="rectangle", x=0, y=0, w=(g_rad*2)+10, h=(g_rad*2)+10, color=RED, filled=true},
-                {type="label", text=a_txt,  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
-                {type="arc", x=g_rad, y=g_rad+20*lvSCALE,
-                    radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, rounded=true,
-                    color=lcd.RGB(0x444444)},
-                {type="arc", x=g_rad+3, y=g_rad+20*lvSCALE,
-                    radius=g_rad, thickness=g_thick, startAngle=g_angel_min,
-                    endAngle=function() return calEndAngle(f_percent) end,
-                    color=function() return calcColor(f_percent, sensor) end,
-                },
+    parentBox:box({x=(col-1)* (g_rad*2 + x_space), y=(line-1) * (g_rad*2 + y_space),
+        children={
+            -- {type="rectangle", x=0, y=0, w=(g_rad*2)+10, h=(g_rad*2)+10, color=RED, filled=true},
+            {type="label", text=a_txt,  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
+            {type="arc", x=g_rad, y=g_rad+20*lvSCALE,
+                radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, rounded=true,
+                color=lcd.RGB(0x444444)},
+            {type="arc", x=g_rad, y=g_rad+20*lvSCALE,
+                radius=g_rad, thickness=g_thick, startAngle=g_angel_min,
+                endAngle=function() return calEndAngle(f_percent) end,
+                color=function() return calcColor(f_percent, sensor) end,
+            },
 
-                {type="label", x=text.x, y=text.y, w=g_rad*2, h=g_rad*2, text= f_val, font=FS.FONT_8, color=txtColor, align=is800 and CENTER or 0},
-                -- {type="image", x=35*lvSCALE, y=25*lvSCALE, file="/SCRIPTS/RF2-dashboards/img/"..a_icon, w=16*lvSCALE, h=16*lvSCALE, visible=a_icon~=nil},
-            }
+            {type="label", x=text.x, y=text.y, w=g_rad*2, h=g_rad*2, text= f_val, font=FS.FONT_8, color=txtColor, align=is800 and CENTER or 0},
+            -- {type="image", x=35*lvSCALE, y=25*lvSCALE, file="/SCRIPTS/RF2-dashboards/img/"..a_icon, w=16*lvSCALE, h=16*lvSCALE, visible=a_icon~=nil},
         }
     })
 

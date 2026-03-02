@@ -17,14 +17,17 @@ M.build_ui = function(parentBox, wgt, myBatt, fPercent, getPercentColor)
     -- local box2 = lvgl.box({x=200, y=100})
     -- lvgl.rectangle(box2, {x=0, y=0, w=30, h=30, color=BLUE, filled=false, rounded=8, thickness=2})
 
-    local box = parentBox:box({x=myBatt.x, y=myBatt.y})
-    box:rectangle({x=0, y=0, w=myBatt.w, h=myBatt.h, color=myBatt.bg_color, filled=true, rounded=6, thickness=8})
-    box:rectangle({x=0, y=0, w=myBatt.w, h=myBatt.h, color=WHITE, filled=false, thickness=myBatt.fence_thickness or 3, rounded=8})
-    box:rectangle({x=5, y=5,
-        -- w=0, h=myBatt.h,
-        filled=true, rounded=4,
-        size =function() return math.floor(fPercent(wgt) / 100 * myBatt.w)-10, myBatt.h-10 end,
-        color=function() return getPercentColor(wgt, percent) or GREEN end,
+    parentBox:box({x=myBatt.x, y=myBatt.y,
+        children={
+            {type="rectangle", x=0, y=0, w=myBatt.w, h=myBatt.h, color=myBatt.bg_color, filled=true, rounded=6, thickness=8},
+            {type="rectangle", x=0, y=0, w=myBatt.w, h=myBatt.h, color=WHITE, filled=false, thickness=myBatt.fence_thickness or 3, rounded=8},
+            {type="rectangle", x=5, y=5,
+                -- w=0, h=myBatt.h,
+                filled=true, rounded=4,
+                size =function() return math.floor(fPercent(wgt) / 100 * myBatt.w)-10, myBatt.h-10 end,
+                color=function() return getPercentColor(wgt, percent) or GREEN end,
+            }
+        }
     })
     -- draw battery segments
     -- for i=0, myBatt.w, myBatt.segments_w do

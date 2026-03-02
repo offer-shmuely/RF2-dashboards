@@ -16,12 +16,7 @@ local lib_post_arc = assert(loadScript(baseDir .. "/parts/post_arc.lua", "btd"))
 
 local M = {}
 
-local function lvglHPercent(p)
-    return math.floor(p * LCD_W/100)
-end
-local function lvglVPercent(p)
-    return math.floor(p * LCD_H/100)
-end
+
 local function lvglHFactor(p)
     return math.floor(p * LCD_W / 480)
 end
@@ -35,8 +30,6 @@ M.build_ui = function(wgt)
     if (wgt.options == nil) then log("refresh(wgt.options=nil)") return end
     local txtColor = wgt.options.textColor
     local titleGreyColor = LIGHTGREY
-
-    local dx = 20
 
     lvgl.clear()
 
@@ -52,18 +45,8 @@ M.build_ui = function(wgt)
         }
     })
 
-
     -- main dashboard area
     local pMain = lvgl.box({x=0, y=wgt.selfTopbarHeight*lvSCALE})
-
-    -- time
-    pMain:build({
-        {type="box", x=370*lvSCALE, y=130*lvSCALE, children={
-            {type="label", text="Time", x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
-            {type="label", text=function() return wgt.values.timer_str end, x=0, y=15*lvSCALE, font=FS.FONT_16 ,color=txtColor},
-        }}
-    })
-
 
     -- current
     lib_post_arc.build_ui(pMain, wgt, 1,1, lcd.RGB(0xFF623F), "Current",
@@ -123,16 +106,37 @@ M.build_ui = function(wgt)
 
     -- capacity
     lib_post_arc.build_ui(pMain, wgt, 2,4, lcd.RGB(0xFF623F), "Capacity",
-        function() return string.format("%d%% (used: %dmah)", wgt.values.capaPercent, wgt.values.capaUsed or 0) end,
+        function() return string.format("%d%%\nUsed: %dmah", wgt.values.capaPercent, wgt.values.capaUsed or 0) end,
         function() return wgt.values.capaPercent or 0 end,
         nil,
         wgt.tlmEngine.sensorTable.capa
     )
 
+    -- image & more
+    local isizew=150*lvSCALE
+    local isizeh=100*lvSCALE
+    local right_col_x = is800 and 440*lvSCALE or 330
+    pMain:box({x=right_col_x, y=5*lvSCALE,
+        children={
+            -- image
+            {type="rectangle", x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY},
+            {type="image", x=0, y=0, w=isizew, h=isizeh, fill=false, file=function() return wgt.values.img_craft_image_name end},
+            -- craft name
+            {type="rectangle", x=6*lvSCALE, y=isizeh-25*lvSCALE, w=isizew-20, h=20*lvSCALE, filled=true, rounded=8*lvSCALE, color=DARKGREY, opacity=200},
+            {type="label", text=function() return wgt.values.craft_name end,  x=15*lvSCALE, y=isizeh-25*lvSCALE, font=FS.FONT_8 ,color=txtColor},
+            -- flights count
+            {type="label",  x=8*lvSCALE, y=isizeh+10*lvSCALE, font=FS.FONT_12 ,color=WHITE,
+                text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end,
+            },
+            -- time
+            {type="label", text="Time", x=8*lvSCALE, y=isizeh+50*lvSCALE, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", text=function() return wgt.values.timer_str end, x=8*lvSCALE, y=isizeh+60*lvSCALE, font=FS.FONT_16 ,color=txtColor},
+        }
+    })
 
     -- status bar
     wgt.statusbar.init("Shmuely", {
-        {name="RQly-:", ftxt=function() return string.format("LQ-: %s%%",     wgt.values.link_rqly_min) end,  color=GREEN, error_color=RED, error_cond=function() return (wgt.is_connected and wgt.values.link_rqly_min < 80) end },
+        {name="LQ-:",   ftxt=function() return string.format("LQ-: %s%%",     wgt.values.link_rqly_min) end,  color=GREEN, error_color=RED, error_cond=function() return (wgt.is_connected and wgt.values.link_rqly_min < 80) end },
         {name="VBec-:", ftxt=function() return string.format("VBec-: %0.1fV", wgt.values.v_rx_min) end,       color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.rx_voltage.isWarn() end },
         {name="Curr+:", ftxt=function() return string.format("A+: %dA",       wgt.values.curr_max) end},
         {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",   wgt.values.link_tx_power_max) end},
@@ -140,57 +144,6 @@ M.build_ui = function(wgt)
     })
     wgt.statusbar.build_ui(pMain, wgt)
 
-
-    -- image
-    local isizew=150
-    local isizeh=100
-    pMain:box({x=lvglHPercent(80) - isizew/2, y=5*lvSCALE,
-        children={
-            -- {type="rectangle", x=0, y=0, w=isizew, h=isizeh, thickness=4, rounded=15, filled=false, color=GREY},
-            {type="image", x=0, y=0, w=isizew, h=isizeh, fill=false, file=function() return wgt.values.img_craft_image_name end}
-        }
-    })
-
-    -- flights count
-    pMain:build({{type="box", x=lvglHPercent(75), y=lvglVPercent(30),
-        children={
-            {type="label", x=0, y=0, font=FS.FONT_12 ,color=WHITE,
-                text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end
-            },
-        }
-    }})
-    -- air time
-    pMain:build({{type="box", x=lvglHPercent(75), y=lvglVPercent(40),
-        children={
-            {type="label", x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999),
-                text=function() return string.format("%s Min", wgt.values.model_total_time_str or "---") end
-            },
-        }
-    }})
-
-    -- craft name
-    local bCraftName = pMain:box({x=lvglHPercent(70), y=lvglVPercent(20)})
-    bCraftName:rectangle({x=10, y=20, w=isizew-20, h=20, filled=true, rounded=8, color=DARKGREY, opacity=200})
-    bCraftName:label({text=function() return wgt.values.craft_name end,  x=15, y=20, font=FS.FONT_8 ,color=txtColor})
-
-    -- -- failed to arm flags
-    -- pMain:build({{type="box", x=100, y=25, visible=function() return wgt.values.arm_fail end,
-    --     children={
-    --         {type="rectangle", x=0, y=0, w=280, h=150, color=RED, filled=true, rounded=8, opacity=245},
-    --         {type="label", text=function()
-    --             return string.format("%s (%s)", wgt.values.arm_disable_flags_txt, wgt.values.arm_fail)
-    --         end, x=10, y=0, font=FS.FONT_8, color=WHITE},
-    --     }
-    -- }})
-
-    -- -- no connection
-    -- pMain:build({{type="box", x=330, y=10, visible=function() return wgt.is_connected==false end,
-    --     children={
-    --         {type="rectangle", x=5, y=10, w=isizew-10, h=isizeh-20, rounded=15, filled=true, opacity=250, color=BLACK},
-    --         {type="image", x=30, y=0, w=90, h=90, file=baseDir.."/img/no_connection_wr.png"},
-    --         {type="label", x=10, y=70, text=function() return wgt.not_connected_error end , font=FS.FONT_8, color=WHITE},
-    --     }
-    -- }})
 
 end
 

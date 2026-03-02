@@ -9,15 +9,13 @@ local inSimu = arg[6]
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 local lvSCALE = lvgl.LCD_SCALE or 1
+local is800 = (LCD_W==800)
 
 local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
 local lib_post_bar = assert(loadScript(baseDir .. "/parts/post_bar.lua", "btd"))()
 
 local M = {}
 
-local function lvglPercent(p)
-    return math.floor((LCD_W - 20) * p / 100)
-end
 
 M.build_ui = function(wgt)
     if (wgt == nil) then log("refresh(nil)") return end
@@ -31,40 +29,39 @@ M.build_ui = function(wgt)
     lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
 
     -- top bar
-    lvgl.box({x=0, y=0, w=LCD_W, h=40, visible=function() return wgt.isNeedTopbar end,
+    lvgl.box({x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, visible=function() return wgt.isNeedTopbar end,
         children={
-            {type="rectangle", x=0, y=0, w=LCD_W, h=40, color=DARKGREY, filled=true},
-            {type="label", x=60, y=2, font=FS.FONT_16, color=txtColor, text=function() return wgt.values.craft_name end},
-            {type="image", x=0, y=0, w=45, h=45, file="/SCRIPTS/RF2-dashboards/img/rf2_logo.png"},
+            {type="rectangle", x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, color=DARKGREY, filled=true},
+            {type="label", x=60*lvSCALE, y=2*lvSCALE, font=FS.FONT_16, color=txtColor, text=function() return wgt.values.craft_name end},
+            {type="image", x=0, y=0, w=45*lvSCALE, h=45*lvSCALE, file="/SCRIPTS/RF2-dashboards/img/rf2_logo.png"},
         }
     })
 
-
     -- main dashboard area
-    local pMain = lvgl.box({x=0, y=wgt.selfTopbarHeight})
+    local pMain = lvgl.box({x=0, y=wgt.selfTopbarHeight*lvSCALE})
 
-    pMain:build({
-        {type="box", x=lvglPercent(2), y=10, children={
+    pMain:box({x=30*lvSCALE, y=10,
+        children={
             {type="label", text="Flight Statistics", x=0, y=0, font=FS.FONT_12, color=txtColor},
-        }}
+        }
     })
     -- flight time
-    pMain:build({
-        {type="box", x=lvglPercent(56), y=2*lvSCALE, children={
+    pMain:box({x=LCD_W//2+20*lvSCALE, y=2*lvSCALE,
+        children={
             {type="label", text="Flight Time", x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
             {type="label", text=function() return wgt.values.timer_str end, x=0, y=15*lvSCALE, font=FS.FONT_16 ,color=txtColor},
-        }}
+        }
     })
 
     -- flights count
-    pMain:build({{type="box", x=lvglPercent(79), y=2*lvSCALE,
+    pMain:box({x=LCD_W//2+140*lvSCALE, y=2*lvSCALE,
         children={
             {type="label", text="Total Flights", x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
             {type="label", x=0, y=15*lvSCALE, font=FS.FONT_16 ,color=WHITE,
                 text=function() return string.format("%s", wgt.values.model_total_flights or "000") end
             },
         }
-    }})
+    })
 
     -- -- horizontal line in the middle
     -- pMain:build({

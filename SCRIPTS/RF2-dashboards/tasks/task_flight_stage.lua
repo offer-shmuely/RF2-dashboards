@@ -1,8 +1,9 @@
 local arg = {...}
-local baseDir = arg[1]
-local log = arg[2]
-local app_name = arg[3]
-local onFlightStateChanged = arg[4]  -- callback
+local wgt = arg[1]
+local baseDir = arg[2]
+local log = arg[3]
+local app_name = arg[4]
+local onFlightStateChanged = arg[5]  -- callback
 
 local M = {}
 
@@ -29,21 +30,21 @@ local function onEnterStatePreFlight()
     log("task_flight_stage: -> pre_flight")
     local oldState = state
     state = M.FLIGHT_STATE.PRE_FLIGHT
-    onFlightStateChanged(oldState, state)
+    onFlightStateChanged(wgt, oldState, state)
 end
 
 local function onEnterStateOnAirPending(head_speed)
     log("task_flight_stage: -> on_air pending (rpm: %s)", head_speed)
     local oldState = state
     state = M.FLIGHT_STATE.ON_AIR_PENDING
-    onFlightStateChanged(oldState, state)
+    onFlightStateChanged(wgt, oldState, state)
 end
 
 local function onEnterStateOnAir(head_speed)
     log("task_flight_stage: -> on_air (rpm: %s)", head_speed)
     local oldState = state
     state = M.FLIGHT_STATE.ON_AIR
-    onFlightStateChanged(oldState, state)
+    onFlightStateChanged(wgt, oldState, state)
     playFile("takeoff.wav")  -- audio notification
 end
 
@@ -51,7 +52,7 @@ local function onEnterStatePostFlight(head_speed)
     log("task_flight_stage: -> post_flight (rpm: %s)", head_speed)
     local oldState = state
     state = M.FLIGHT_STATE.POST_FLIGHT
-    onFlightStateChanged(oldState, state)
+    onFlightStateChanged(wgt, oldState, state)
     playFile("landing.wav")  -- audio notification
 end
 
