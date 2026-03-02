@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## next
 
-## [2.2.16] - 2026-02
-- **Big Screen Support**: all dashboards updated to support the stunning 800px-wide display of the TX16mk3 ? every element, label, gauge and bar now scales dynamically with the screen resolution.
+## [2.2.16] - 2026-03
 
 ### Added
-- new "Nitro" dashboard - focused on RX battery voltage display
+- **TX16mk3 Big Screen Support**: All dashboards updated to support the stunning 800px-wide display of the TX16mk3 - every element, label, gauge and bar now scales dynamically with the screen resolution
+- New "Nitro" dashboard - focused on RX battery voltage display
 
+### Changed
+- Enhanced post-flight dashboard rendering for better readability on 800px screens
 
 ---
 
