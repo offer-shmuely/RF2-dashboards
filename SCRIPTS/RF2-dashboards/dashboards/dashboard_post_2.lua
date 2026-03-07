@@ -14,7 +14,10 @@ local is800 = (LCD_W==800)
 local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
 local lib_post_bar = assert(loadScript(baseDir .. "/parts/post_bar.lua", "btd"))()
 
-local M = {}
+local M = {
+    name = "post_2",
+    is_need_capa_audio = false,
+}
 
 
 M.build_ui = function(wgt)

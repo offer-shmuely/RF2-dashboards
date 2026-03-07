@@ -2,6 +2,7 @@ local arg = {...}
 local baseDir = arg[1]
 local log = arg[2]
 local app_name = arg[3]
+local curr_dashboard = arg[4]
 
 local M = {}
 
@@ -40,6 +41,10 @@ end
 -- play capacity audio when capacity percent is below 20% every 10 seconds
 -- play capacity audio when capacity percent is below 30% every 20 seconds
 M.run = function(wgt)
+    if not curr_dashboard.is_need_capa_audio then
+        -- log("task_capa_audio: dashboard does not need capa audio (dashboard=%s)", curr_dashboard.name)
+        return 0
+    end
     local new_capa = wgt.values.capaPercent
     local new_capa_parted = math.ceil(new_capa / 10) * 10
     -- log("audio for capacity: last=%s new=%s", last_capa_perc_parted, new_capa_parted)

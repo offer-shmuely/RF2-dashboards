@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## next
 
+## [2.2.17] - 2026-03
+
+### Added
+
+### Changed
+- Capacity audio alerts are now automatically disabled when using the Nitro dashboard
+
+
 ## [2.2.16] - 2026-03
 
 ### Added

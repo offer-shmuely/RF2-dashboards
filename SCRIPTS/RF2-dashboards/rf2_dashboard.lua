@@ -1,5 +1,5 @@
 local app_name = "RF2-dashboards"
-local app_ver = "2.2.16"
+local app_ver = "2.2.17"
 
 local baseDir = "/SCRIPTS/RF2-dashboards"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
@@ -514,7 +514,7 @@ local function update(wgt, options)
 
     wgt.periodicResetTlmAfterConnection = wgt.tools.periodicInit()
 
-    wgt.task_capa_audio = loadScript(baseDir .. "/tasks/task_capa_audio.lua", "btd")(baseDir, log, app_name)
+    wgt.task_capa_audio = loadScript(baseDir .. "/tasks/task_capa_audio.lua", "btd")(baseDir, log, app_name, curr_dashboard)
     wgt.task_capa_audio.init()
 
     wgt.task_flight_stage = loadScript(baseDir .. "/tasks/task_flight_stage.lua", "btd")(wgt, baseDir, log, app_name, onFlightStateChanged)

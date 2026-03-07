@@ -13,7 +13,10 @@ local is800 = (LCD_W==800)
 
 local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
 
-local M = {}
+local M = {
+    name = "fancy",
+    is_need_capa_audio = true,
+}
 
 local function lvglHPercent(p)
     return math.floor(p * LCD_W/100)
@@ -172,7 +175,6 @@ M.build_ui = function(wgt)
     pMain:box({x=0, y=0, visible=function() return wgt.dbg_layout_enabled end,
         children={
             {type="label", x=300*lvSCALE, y=190*lvSCALE, text=function() return string.format("dbgX: %d, dbgY: %d", wgt.dbgx, wgt.dbgy) end, font=FS.FONT_6, color=YELLOW},
-                -- lcd.drawText(400,0, string.format("%sx%s", dbgx, dbgy), FS.FONT_8 + WHITE)
         }
     })
 
