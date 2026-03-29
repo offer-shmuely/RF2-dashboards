@@ -1,5 +1,5 @@
 local app_name = "RF2-dashboards"
-local app_ver = "2.2.17"
+local app_ver = "2.2.18"
 
 local baseDir = "/SCRIPTS/RF2-dashboards"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
@@ -280,7 +280,7 @@ local function updateCurr(wgt)
 
     wgt.values.curr = val
     wgt.values.curr_max = val_max
-    wgt.values.curr_percent = math.min(100, math.floor(100 * (val / curr_top)))
+    wgt.values.curr_percent     = math.min(100, math.floor(100 * (val     / curr_top)))
     wgt.values.curr_max_percent = math.min(100, math.floor(100 * (val_max / curr_top)))
 end
 
@@ -510,7 +510,7 @@ local function update(wgt, options)
     wgt.statusbar = assert(loadScript(baseDir .. "/parts/statusbar.lua",  "btd"))(m_log.info, app_name, wgt.tools)
     wgt.tlmEngine = assert(loadScript(baseDir .. "/telemetry_engine.lua", "btd"))(m_log.info, app_name, runningInSimulator)
     log("x-telemetery tlmTask: %s", wgt.tlmEngine)
-    wgt.tlmEngine.init()
+    wgt.tlmEngine.init(wgt)
 
     wgt.periodicResetTlmAfterConnection = wgt.tools.periodicInit()
 

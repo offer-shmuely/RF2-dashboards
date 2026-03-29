@@ -22,8 +22,8 @@ sensorTable = {
                 sensor.lastValueMin = 42
             end
         end,
-        low_warning=90,
-        low_alert=80,
+        isWarn  = function() return sensorTable.link_rqly.lastValueMin > 0 and sensorTable.link_rqly.lastValueMin < 90 end,
+        isAlert = function() return sensorTable.link_rqly.lastValueMin > 0 and sensorTable.link_rqly.lastValueMin < 80 end,
         sim = {
             getValue = function() return 92 end,
         },
@@ -34,6 +34,8 @@ sensorTable = {
         name = "link_tx_power",
         sourceId = "TPWR",
         lastValueMax = NAN_VAL,
+        isWarn  = function() return sensorTable.link_tx_power.lastValueMax > 100 end,
+        isAlert = function() return sensorTable.link_tx_power.lastValueMax > 250 end,
         update_sim = function(sensor)
             if sensor.lastValueMax == NAN_VAL then
                 sensor.lastValueMax = 100
@@ -74,8 +76,10 @@ sensorTable = {
                 sensor.lastValueMin = 23.0
             end
         end,
-        low_warning=15, -- 15%=3.710v
-        low_alert=7,    --  7%=3.601v
+        -- 15%=3.710v
+        --  7%=3.601v
+        isWarn  = function() return sensorTable.batt_voltage.lastValueMin < 15 end,
+        isAlert = function() return sensorTable.batt_voltage.lastValueMin <  7 end,
         sim = {
             getValue = function() return 23.0 end,
         },
@@ -105,8 +109,6 @@ sensorTable = {
             -- log("rx_voltage.isAlert() called, v=%s", v)
             return false
         end,
-        -- low_warning=95,
-        -- low_alert=90,
         fPercent = function(v)
             if v == NAN_VAL then
                 return 0
@@ -124,13 +126,6 @@ sensorTable = {
         end,
     },
 
-    -- -- Cell Count
-    -- cell_count = {
-    --     name = "cell-count",
-    --     sourceId = "Cel#",
-    --     lastValue = NAN_VAL,
-    -- },
-
     -- headspeed
     rpm = {
         name = "headspeed",
@@ -141,8 +136,8 @@ sensorTable = {
                 sensor.lastValueMax = 1800
             end
         end,
-        high_warning = 100,
-        high_alert = 100,
+        isWarn  = function() return false end,
+        isAlert = function() return false end,
         sim = {
             getValue = function() return 1500 end,
         },
@@ -152,13 +147,14 @@ sensorTable = {
         name = "current",
         sourceId = "Curr",
         lastValueMax = NAN_VAL,
+        maxCurrentFromOptions = 1000, -- will be filled from wgt.options.currTop
         update_sim = function(sensor)
             if sensor.lastValueMax == NAN_VAL then
                 sensor.lastValueMax = 115
             end
         end,
-        high_warning = 80,
-        high_alert = 90,
+        isWarn  = function() return sensorTable.current.lastValueMax > sensorTable.current.maxCurrentFromOptions - 20 end,
+        isAlert = function() return sensorTable.current.lastValueMax > sensorTable.current.maxCurrentFromOptions end,
         sim = {
             getValue = function() return 40 end,
         },
@@ -175,8 +171,8 @@ sensorTable = {
                 sensor.lastValueMax = 120
             end
         end,
-        high_warning = 80,
-        high_alert = 90,
+        isWarn  = function() return sensorTable.temp_esc.lastValueMax > 80 end,
+        isAlert = function() return sensorTable.temp_esc.lastValueMax > 90 end,
         sim = {
             getValue = function() return 40 end,
         },
@@ -192,8 +188,8 @@ sensorTable = {
         name = "capacity",
         sourceId = "Capa", -- Capa
         lastValue = NAN_VAL,
-        low_warning = 20,
-        low_alert = 10,
+        isWarn  = function() return sensorTable.capa.lastValue < 20 end,
+        isAlert = function() return sensorTable.capa.lastValue < 10 end,
         sim = {
             getValue = function() return 1000 end,
         },
@@ -240,8 +236,8 @@ sensorTable = {
         name = "throttle_pct",
         sourceId = "Thr",
         lastValueMax = NAN_VAL,
-        high_warning = 90,
-        high_alert = 95,
+        isWarn  = function() return sensorTable.throttle_percent.lastValueMax > 90 end,
+        isAlert = function() return sensorTable.throttle_percent.lastValueMax > 95 end,
         update_sim = function(sensor)
             if sensor.lastValueMax == NAN_VAL then
                 sensor.lastValueMax = 76
@@ -416,6 +412,27 @@ function M.resetSensorsMinMax()
     -- log("telemetry.resetSensorsMinMax() completed")
 end
 
+function M.isWarn(sensor)
+    if sensor == nil then
+        return false
+    end
+    if sensor.isWarn ~=nil then
+        log("for statusbar telemetry.isWarn(%s) --> %s", sensor.name, sensor.isWarn())
+        return sensor.isWarn()
+    end
+    return false
+end
+
+function M.isAlert(sensor)
+    if sensor == nil then
+        return false
+    end
+    if sensor.isAlert ~=nil then
+        log("for statusbar telemetry.isAlert(%s) --> %s", sensor.name, sensor.isAlert())
+        return sensor.isAlert()
+    end
+    return false
+end
 
 function M.armingToolsIsArmed()
     local val  = M.value(sensorTable.isArmed)
@@ -487,8 +504,12 @@ function M.active()
     return rfsuite.session.telemetryState or false
 end
 
-function M.init()
-    protocol = searchForProtocol()
+function M.init(wgt)
+    protocol = 0searchForProtocol()
+
+    -- update user selection from options
+    sensorTable.current.maxCurrentFromOptions = wgt.options.currTop or 1000
+
 end
 
 -- allow sensor table to be accessed externally

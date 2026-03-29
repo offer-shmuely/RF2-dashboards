@@ -102,7 +102,7 @@ M.build_ui = function(wgt)
     -- headspeed
     lib_post_arc.build_ui(pMain, wgt, 2,3, lcd.RGB(0xFF623F), "Headspeed",
         function() return string.format("%srpm", wgt.values.rpm_max) end,
-        function() return wgt.values.rpm_percent end,
+        function() return 100 end, -- we show the max, so hardcoded 100%
         nil,
         wgt.tlmEngine.sensorTable.rpm
     )
@@ -138,12 +138,7 @@ M.build_ui = function(wgt)
     })
 
     -- status bar
-    wgt.statusbar.init("Shmuely", {
-        {name="LQ-:",   ftxt=function() return string.format("LQ-: %s%%",     wgt.values.link_rqly_min) end,  color=GREEN, error_color=RED, error_cond=function() return (wgt.is_connected and wgt.values.link_rqly_min < 80) end },
-        {name="VBec-:", ftxt=function() return string.format("VBec-: %0.1fV", wgt.values.v_rx_min) end,       color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.rx_voltage.isWarn() end },
-        {name="Curr+:", ftxt=function() return string.format("A+: %dA",       wgt.values.curr_max) end},
-        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",   wgt.values.link_tx_power_max) end},
-        {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",    wgt.values.thr_max) end},
+    wgt.statusbar.init(wgt, "Shmuely", {
     })
     wgt.statusbar.build_ui(pMain, wgt)
 

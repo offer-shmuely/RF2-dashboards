@@ -8,6 +8,21 @@ local function lvglPercent(p)
     return math.floor((LCD_W - 20) * p / 100)
 end
 
+local function calcColor(wgt, f_percent, sensor)
+    if sensor==nil then
+        return GREY
+    end
+    if wgt.tlmEngine.isAlert(sensor) then
+        return lcd.RGB(0xFF0000)
+    end
+    if wgt.tlmEngine.isWarn(sensor) then
+        return lcd.RGB(0xFF8000)
+    end
+
+    -- everything is good
+    return lcd.RGB(0x00FF00)
+end
+
 M.build_ui = function(  parentBox, wgt, col, line, a_color, a_txt,
                         f_val, f_percent,
                         a_icon,
@@ -27,43 +42,16 @@ M.build_ui = function(  parentBox, wgt, col, line, a_color, a_txt,
     local titleGreyColor = LIGHTGREY
     local txtColor = wgt.options.textColor
 
-    local function calcColor(f_percent, sensor)
-        if sensor==nil then
-            return GREY
-        end
-        local low_warn = sensor.low_warning or -9999
-        local low_alert = sensor.low_alert or -9999
-        local high_warn = sensor.high_warning or 9999
-        local high_alert = sensor.high_alert or 9999
-
-        local val = f_percent()
-        if val>high_alert or val<low_alert then
-            -- alert
-            return lcd.RGB(0xFF623F)
-        end
-        if val>high_warn or val<low_warn then
-            -- warning
-            return lcd.RGB(0xFF8000)
-        end
-        -- ok
-        return lcd.RGB(0x00A560)
-    end
-
-    local highWarnVal = 9999
-    local highAlertVal = 9999
-    if sensor~=nil then
-        highWarnVal = sensor.high_warning
-        highAlertVal = sensor.high_alert
-    end
-
     local x1 = 0
     local x2 = lvglPercent(15) --  75*lvSCALE
     local x3 = lvglPercent(25) -- 120*lvSCALE
     local rect_h = 20
     local rect_w = 130
+    local rect_txt_shadow_w = 70
     if is800 then
         rect_h = 40
         rect_w = 240
+        rect_txt_shadow_w = 120
     end
 
     local function calcBarWidth(f_percent)
@@ -84,12 +72,18 @@ M.build_ui = function(  parentBox, wgt, col, line, a_color, a_txt,
                 -- foreground bar
                 {type="rectangle",x=x2,y=0,
                     size=(function() return calcBarWidth(f_percent), rect_h end),
-                    color=(function() return calcColor(f_percent, sensor) end),
+                    color=(function() return calcColor(wgt, f_percent, sensor) end),
                     filled=true, rounded=2,
                 },
 
-                -- shadow
-                {type="rectangle",x=x3-5,y=1,w=50,h=rect_h-2,color=lcd.RGB(0x000000),filled=true,opacity=60, rounded=4},
+                -- val shadow
+                {type="rectangle",x=x3-5*lvSCALE,y=1, color=lcd.RGB(0x000000), filled=true, opacity=60, rounded=4,
+                    size=(function()
+                        local ts_w, ts_h, v_offset = wgt.tools.lcdSizeTextFixed(f_val(), theFont)
+                        return ts_w+10*lvSCALE, rect_h-2
+                    end),
+                },
+                -- val text
                 {type="label",x=x3,y=0,text= f_val,font=theFont,color=txtColor},
             }
         }

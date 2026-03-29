@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## next
 
+## [2.2.18] - 2026-03
+
+### Added
+- Support for official EdgeTX version 2.12.0
+
+### Changed
+- **Improved Warning Detection**: Status bar now more accurately highlights issues based on actual sensor thresholds
+- **Better Visual Feedback**:
+  - Status bar warnings and alerts now respond to your configured settings (e.g., maximum current)
+  - Arc gauges on post-flight dashboard now have rounded corners for a cleaner look
+- **Post-Flight Dashboard Polish**:
+  - Headspeed display now correctly shows 100% when at maximum RPM
+  - Text shadows automatically adjust to content width for better readability
+  - Simplified status bar display for cleaner post-flight summary
+
+---
+
 ## [2.2.17] - 2026-03
 
 ### Added

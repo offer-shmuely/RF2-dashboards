@@ -16,36 +16,14 @@ local function calEndAngle(f_percent)
     return v
 end
 
-local function calcColor(f_percent, sensor)
+local function calcColor(wgt, f_percent, sensor)
     if sensor==nil then
         return GREY
     end
-
-    -- detection by alert/warn functions
-    if sensor.isAlert ~=nil or sensor.isWarn ~=nil then
-        if sensor.isAlert ~=nil and sensor.isAlert() then
-            return lcd.RGB(0xFF0000)
-        end
-        if sensor.isWarn ~=nil and sensor.isWarn() then
-            return lcd.RGB(0xFF8000)
-        end
-
-        return lcd.RGB(0x00FF00)
-    end
-
-
-    -- detection by percent thresholds
-    local low_warn = sensor.low_warning or -9999
-    local low_alert = sensor.low_alert or -9999
-    local high_warn = sensor.high_warning or 9999
-    local high_alert = sensor.high_alert or 9999
-
-    local val = f_percent()
-
-    if val>high_alert or val<low_alert then
+    if wgt.tlmEngine.isAlert(sensor) then
         return lcd.RGB(0xFF0000)
     end
-    if val>high_warn or val<low_warn then
+    if wgt.tlmEngine.isWarn(sensor) then
         return lcd.RGB(0xFF8000)
     end
 
@@ -74,14 +52,6 @@ M.build_ui = function(parentBox, wgt, line, col, a_color, a_txt,
         x=is800 and 0 or 15,
         y=is800 and 80 or 70}
 
-
-    local highWarnVal = 9999
-    local highAlertVal = 9999
-    if sensor~=nil then
-        highWarnVal = sensor.high_warning
-        highAlertVal = sensor.high_alert
-    end
-
     parentBox:box({x=(col-1)* (g_rad*2 + x_space), y=(line-1) * (g_rad*2 + y_space),
         children={
             -- {type="rectangle", x=0, y=0, w=(g_rad*2)+10, h=(g_rad*2)+10, color=RED, filled=true},
@@ -92,10 +62,11 @@ M.build_ui = function(parentBox, wgt, line, col, a_color, a_txt,
             {type="arc", x=g_rad, y=g_rad+20*lvSCALE,
                 radius=g_rad, thickness=g_thick, startAngle=g_angel_min,
                 endAngle=function() return calEndAngle(f_percent) end,
-                color=function() return calcColor(f_percent, sensor) end,
+                rounded=true,
+                color=function() return calcColor(wgt, f_percent, sensor) end,
             },
 
-            {type="label", x=text.x, y=text.y, w=g_rad*2, h=g_rad*2, text= f_val, font=FS.FONT_8, color=txtColor, align=is800 and CENTER or 0},
+            {type="label", x=text.x, y=text.y, w=g_rad*2, h=g_rad*2, text=f_val, font=FS.FONT_8, color=txtColor, align=is800 and CENTER or 0},
             -- {type="image", x=35*lvSCALE, y=25*lvSCALE, file="/SCRIPTS/RF2-dashboards/img/"..a_icon, w=16*lvSCALE, h=16*lvSCALE, visible=a_icon~=nil},
         }
     })

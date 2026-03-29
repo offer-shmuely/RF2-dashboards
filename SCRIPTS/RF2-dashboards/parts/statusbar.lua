@@ -32,7 +32,7 @@ local function separator_width()
     return ts_w2
 end
 
-M.init = function(dev, elem_list)
+M.init = function(wgt, dev, elem_list)
     log("lib_statusbar init()")
     dev_name = dev
     values_elements_array = {}
@@ -41,7 +41,7 @@ M.init = function(dev, elem_list)
         local txt = elem.ftxt()
         local ts_w2, ts_h2, v_offset = tools.lcdSizeTextFixed(txt, default_font_size)
         values_elements_array[#values_elements_array+1] = {name="|", value_func=separator_txt, x=0, width=separator_width()}
-        values_elements_array[#values_elements_array+1] = {name=elem.name, value_func=elem.ftxt, x=0, width=0, color=elem.color, error_color=elem.error_color, error_cond=elem.error_cond}
+        values_elements_array[#values_elements_array+1] = {name=elem.name, value_func=elem.ftxt, x=0, width=0, color=elem.color, sensor=elem.sensor}
     end
 end
 
@@ -121,7 +121,6 @@ M.build_ui = function(parentBox, wgt)
     local statusBarColor = lcd.RGB(0x0078D4)
 
     bStatusBar:rectangle({x=0, y=0, w=wgt.zone.w, h=sb_h, color=statusBarColor, filled=true})
-    -- bStatusBar:rectangle({x=25, y=0,w=70, h=ts_h2, color=RED, filled=true, visible=function() return (wgt.values.link_rqly < 80) end })
 
     local dev_w, dev_h, dev_v_offset = tools.lcdSizeTextFixed(dev_name, default_font_size)
     bStatusBar:label({x=LCD_W-dev_w-3, y=2, text=dev_name, font=default_font_size, color=YELLOW})
@@ -133,21 +132,22 @@ M.build_ui = function(parentBox, wgt)
 
         bStatusBarValuesArea:rectangle({
             pos=function()
-                return head_x + elem.dx-3, 2
+                return head_x + elem.dx-3*lvSCALE, 2*lvSCALE
             end,
-            size=function() return elem.width+6, sb_h-4 end,
+            size=function() return elem.width+6*lvSCALE, sb_h-4*lvSCALE end,
             filled=true,
-            font=default_font_size,
             rounded=2,
             color=function()
-                if elem.error_cond and elem.error_cond() then
-                    return elem.error_color or RED
+                if wgt.tlmEngine.isAlert(elem.sensor) then
+                    return RED
+                elseif wgt.tlmEngine.isWarn(elem.sensor) then
+                    return ORANGE
                 else
                     return elem.color or WHITE
                 end
             end,
             visible=function()
-                if elem.error_cond and elem.error_cond() then
+                if wgt.tlmEngine.isWarn(elem.sensor) then
                     return true
                 else
                     return false
@@ -157,14 +157,14 @@ M.build_ui = function(parentBox, wgt)
         })
         bStatusBarValuesArea:label({
             pos=function()
-                return head_x + elem.dx, 4+v_offset
+                return head_x + elem.dx, 4*lvSCALE+v_offset
             end,
             text=function()
                 return elem.value_func()
             end,
             font=default_font_size,
             color=function()
-                if elem.error_cond and elem.error_cond() then
+                if wgt.tlmEngine.isWarn(elem.sensor) then
                     return WHITE
                 else
                     return elem.color or WHITE
@@ -173,7 +173,7 @@ M.build_ui = function(parentBox, wgt)
         })
         -- bStatusBarValuesArea:rectangle({
         --     pos=function()
-        --         return values_elements_array[i].x, 4+v_offset
+        --         return values_elements_array[i].x, 4*lvSCALE+v_offset
         --     end,
         --     size=function() return values_elements_array[i].width, ts_h2+10 end,
         --     filled=false,

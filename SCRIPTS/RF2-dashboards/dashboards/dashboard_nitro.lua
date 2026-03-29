@@ -155,12 +155,11 @@ M.build_ui = function(wgt)
     })
 
     -- status bar
-    wgt.statusbar.init("Shmuely", {
-        {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, error_color=RED, error_cond=function() return wgt.values.link_rqly_min<80 end },
-        {name="RxBat-:",ftxt=function() return string.format("RxBat: %0.1f/%0.1fV", wgt.values.v_rx,        wgt.values.v_rx_min     ) end, color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.rx_voltage.isWarn() end },
-        {name="Curr+:", ftxt=function() return string.format("A: %d/%dA",           wgt.values.curr,        wgt.values.curr_max     ) end},
-        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",         wgt.values.link_tx_power_max                    ) end},
-        {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end},
+    wgt.statusbar.init(wgt, "Shmuely", {
+        {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.link_rqly  },
+        {name="RxBat-:",ftxt=function() return string.format("RxBat: %0.1f/%0.1fV", wgt.values.v_rx,        wgt.values.v_rx_min     ) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.rx_voltage },
+        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",         wgt.values.link_tx_power_max                    ) end, sensor=wgt.tlmEngine.sensorTable.link_tx_power},
+        {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end, sensor=wgt.tlmEngine.sensorTable.throttle_percent},
     })
     wgt.statusbar.build_ui(pMain, wgt)
 

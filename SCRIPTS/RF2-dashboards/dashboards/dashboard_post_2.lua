@@ -164,12 +164,7 @@ M.build_ui = function(wgt)
     -- )
 
     -- status bar
-    wgt.statusbar.init("Shmuely", {
-        -- {name="RQly-:", ftxt=function() return string.format("RQly-: %s%%", wgt.values.link_rqly_min) end,  color=GREEN, error_color=RED, error_cond=function() return (wgt.values.link_rqly < 80) end },
-        -- {name="VBec-:", ftxt=function() return string.format("VBec-: %sV",  wgt.values.v_rx_min) end,       color=GREEN, error_color=RED, error_cond=function() return wgt.tlmEngine.sensorTable.rx_voltage.isWarn() end },
-        -- {name="Curr+:", ftxt=function() return string.format("Curr+: %sV",  wgt.values.curr_max) end},
-        -- {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw", wgt.values.link_tx_power_max) end},
-        -- {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",  wgt.values.thr_max) end},
+    wgt.statusbar.init(wgt, "Shmuely", {
     })
     wgt.statusbar.build_ui(pMain, wgt)
 
