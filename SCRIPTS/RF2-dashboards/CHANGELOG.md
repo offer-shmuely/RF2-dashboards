@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## next
 
+## [2.2.19] - 2026-04
+
+### Added
+- **AM32 ESC Support**: Full configuration support for AM32 ESCs (motor direction, timing advance, protocol, brake-on-stop, low voltage cutoff, variable PWM)
+- **Additional ESC Support**: Added support for 4-in-1 ESCs and HW Platinum 5 ESCs
+- **Battery Profile Support**: Read and display battery profile settings from the flight controller
+- **Governor Improvements**: New NITRO governor mode option; added autorotation timeout and throttle type configuration (NORMAL / SWITCH / FUNCTION)
+- **RotorFlight Rates Profile**: Added support for RotorFlight (ROTORFL) rate profiles
+
+### Changed
+- **Post-Flight Bars**: Progress bars on post-flight dashboard now have more rounded corners for a cleaner look
+
+### Fixed
+- Crash fix when the heli is not connected (dashboard now shows "Heli not Found" instead of crashing)
+
+---
+
 ## [2.2.18] - 2026-03
 
 ### Added
