@@ -36,7 +36,7 @@ end
 
 -- Extra life earned (1UP sound)
 -- Happy ascending melody
-function pacmanPlayExtraLife()
+local function pacmanPlayExtraLife()
   playTone(523, 120, 0, PLAY_NOW)   -- C5
   playTone(659, 120, 0)             -- E5
   playTone(784, 120, 0)             -- G5

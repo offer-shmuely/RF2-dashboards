@@ -52,7 +52,7 @@ M.build_ui = function(parentBox, wgt, myBatt, fPercent, getPercentColor)
     --     })
     -- end
 
-    return box
+    return
 end
 
 

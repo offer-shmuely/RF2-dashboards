@@ -190,10 +190,10 @@ M.refresh = function()
         M.streach()
         tools.periodicReset(perd1)
     end
-    if tools.periodicHasPassed(perd2, false) then
-        M.slide()
-        tools.periodicReset(perd2)
-    end
+    -- if tools.periodicHasPassed(perd2, false) then
+    --     M.slide()
+    --     tools.periodicReset(perd2)
+    -- end
 end
 
 return M

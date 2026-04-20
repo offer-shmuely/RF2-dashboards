@@ -65,15 +65,13 @@ M.build_ui = function(  parentBox, wgt, col, line, a_color, a_txt,
             children={
                 {type="label", text=a_txt, x=x1, y=0,font=FS.FONT_8,color=titleGreyColor},
 
-                -- -- shadow
-                -- {type="rectangle",x=x2,y=0,w=rect_w,h=rect_h,color=lcd.RGB(0x000000),filled=true},
                 -- background bar
-                {type="rectangle",x=x2,y=0,w=rect_w,h=rect_h,color=lcd.RGB(0x444444),filled=true, rounded=2},
+                {type="rectangle",x=x2,y=0,w=rect_w,h=rect_h,color=lcd.RGB(0x444444),filled=true, rounded=4},
+
                 -- foreground bar
-                {type="rectangle",x=x2,y=0,
+                {type="rectangle",x=x2,y=0, filled=true, rounded=4,
                     size=(function() return calcBarWidth(f_percent), rect_h end),
                     color=(function() return calcColor(wgt, f_percent, sensor) end),
-                    filled=true, rounded=2,
                 },
 
                 -- val shadow
@@ -83,6 +81,7 @@ M.build_ui = function(  parentBox, wgt, col, line, a_color, a_txt,
                         return ts_w+10*lvSCALE, rect_h-2
                     end),
                 },
+
                 -- val text
                 {type="label",x=x3,y=0,text= f_val,font=theFont,color=txtColor},
             }

@@ -40,13 +40,22 @@ local function getDefaults()
         defaults.yaw_dynamic_deadband_filter = { min = 0, max = 250, scale = 10, unit = rf2.units.herz }
     end
 
+    if rf2.apiVersion >= 12.09 then
+        defaults.cyclic_ring = { min = 0, max = 250, unit = rf2.units.percentage }
+        defaults.cyclic_polar = { min = 0, max = 1, table = { [0] = "Off", "On" } }
+    end
+
     defaults.columnHeaders = { "", "", "", "", "", "" }
 
     return defaults
 end
 
 local function getRateDefaults(data, rates_type)
-    data.rates_type = { value = rates_type, min = 0, max = 5, table = { [0] = "NONE", "BETAFL", "RACEFL", "KISS", "ACTUAL", "QUICK"} }
+    data.rates_type = { value = rates_type, min = 0, table = { [0] = "NONE", "BETAFL", "RACEFL", "KISS", "ACTUAL", "QUICK" } }
+    if rf2.apiVersion >= 12.09 then
+        data.rates_type.table[#data.rates_type.table + 1] = "ROTORFL"
+    end
+    data.rates_type.max = #data.rates_type.table
     local rateName = data.rates_type.table[rates_type]
     --rf2.print("rateName: " .. rateName)
     local setRateDefaults = rf2.executeScript("MSP/RATES/" .. rateName)
@@ -96,6 +105,10 @@ local function getRcTuning(callback, callbackParam, data)
                 data.yaw_dynamic_ceiling_gain.value = rf2.mspHelper.readU8(buf)
                 data.yaw_dynamic_deadband_gain.value = rf2.mspHelper.readU8(buf)
                 data.yaw_dynamic_deadband_filter.value = rf2.mspHelper.readU8(buf)
+            end
+            if rf2.apiVersion >= 12.09 then
+                data.cyclic_ring.value = rf2.mspHelper.readU8(buf)
+                data.cyclic_polar.value = rf2.mspHelper.readU8(buf)
             end
             callback(callbackParam, data)
         end,
@@ -166,6 +179,10 @@ local function setRcTuning(data)
         rf2.mspHelper.writeU8(message.payload, data.yaw_dynamic_ceiling_gain.value)
         rf2.mspHelper.writeU8(message.payload, data.yaw_dynamic_deadband_gain.value)
         rf2.mspHelper.writeU8(message.payload, data.yaw_dynamic_deadband_filter.value)
+    end
+    if rf2.apiVersion >= 12.09 then
+        rf2.mspHelper.writeU8(message.payload, data.cyclic_ring.value)
+        rf2.mspHelper.writeU8(message.payload, data.cyclic_polar.value)
     end
     rf2.mspQueue:add(message)
 end

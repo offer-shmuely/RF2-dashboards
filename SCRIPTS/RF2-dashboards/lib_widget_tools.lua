@@ -200,27 +200,29 @@ function M.getSensorInfoByName(sensorName)
     for i=0, 30, 1 do
         local s1 = {}
         local s2 = model.getSensor(i)
+        if s2 ~= nil then
+            --type (number) 0 = custom, 1 = calculated
+            s1.type = s2.type
+            --name (string) Name
+            s1.name = s2.name
+            --unit (number->string) See list of units in the appendix of the OpenTX Lua Reference Guide
+            s1.unit = M.unitIdToString(s2.unit)
+            --prec (number) Number of decimals
+            s1.prec = s2.prec
+            --id (number) Only custom sensors
+            s1.id = s2.id
+            --instance (number) Only custom sensors
+            s1.instance = s2.instance
+            --formula (number) Only calculated sensors. 0 = Add etc. see list of formula choices in Companion popup
+            s1.formula = s2.formula
 
-        --type (number) 0 = custom, 1 = calculated
-        s1.type = s2.type
-        --name (string) Name
-        s1.name = s2.name
-        --unit (number->string) See list of units in the appendix of the OpenTX Lua Reference Guide
-        s1.unit = M.unitIdToString(s2.unit)
-        --prec (number) Number of decimals
-        s1.prec = s2.prec
-        --id (number) Only custom sensors
-        s1.id = s2.id
-        --instance (number) Only custom sensors
-        s1.instance = s2.instance
-        --formula (number) Only calculated sensors. 0 = Add etc. see list of formula choices in Companion popup
-        s1.formula = s2.formula
+            -- log("getSensorInfo: %d. name: %s, unit: %s , prec: %s , id: %s , instance: %s ", i, s2.name, s2.unit, s2.prec, s2.id, s2.instance)
 
-        -- log("getSensorInfo: %d. name: %s, unit: %s , prec: %s , id: %s , instance: %s ", i, s2.name, s2.unit, s2.prec, s2.id, s2.instance)
-
-        if s2.name == sensorName then
-            return s1
+            if s2.name == sensorName then
+                return s1
+            end
         end
+
     end
 
     return nil
@@ -331,10 +333,10 @@ function M.lcdSizeTextFixed(txt, font_size)
 end
 
 function M.getFontSize(wgt, txt, max_w, max_h, max_font_size)
-    log("getFontSize() [%s] %dx%d", txt, max_w, max_h)
     local maxFontIndex = M.getFontIndex(max_font_size, nil)
+    --log("getFontSize() [%s] %dx%d (maxIndex: %d)", txt, max_w, max_h, maxFontIndex)
 
-    if M.getFontIndex(FS.FONT_38, nil) <= maxFontIndex then
+    if maxFontIndex>=5 then
         local w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_38)
         if w <= max_w and h <= max_h then
             log("[%s] FS.FONT_38 %dx%d", txt, w, h)
@@ -344,23 +346,29 @@ function M.getFontSize(wgt, txt, max_w, max_h, max_font_size)
         end
     end
 
-
-    w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_16)
-    if w <= max_w and h <= max_h then
-        -- log("[%s] FS.FONT_16 %dx%d", txt, w, h, txt)
-        return FS.FONT_16, w, h, v_offset
+    local w, h, v_offset
+    if maxFontIndex>=4 then
+        w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_16)
+        if w <= max_w and h <= max_h then
+            -- log("[%s] FS.FONT_16 %dx%d", txt, w, h, txt)
+            return FS.FONT_16, w, h, v_offset
+        end
     end
 
+    if maxFontIndex>=3 then
     w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_12)
-    if w <= max_w and h <= max_h then
-        -- log("[%s] FS.FONT_12 %dx%d", txt, w, h, txt)
-        return FS.FONT_12, w, h, v_offset
+        if w <= max_w and h <= max_h then
+            -- log("[%s] FS.FONT_12 %dx%d", txt, w, h, txt)
+            return FS.FONT_12, w, h, v_offset
+        end
     end
 
-    w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_8)
-    if w <= max_w and h <= max_h then
-        -- log("[%s] FS.FONT_8 %dx%d", txt, w, h, txt)
-        return FS.FONT_8, w, h, v_offset
+    if maxFontIndex>=2 then
+        w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_8)
+        if w <= max_w and h <= max_h then
+            -- log("[%s] FS.FONT_8 %dx%d", txt, w, h, txt)
+            return FS.FONT_8, w, h, v_offset
+        end
     end
 
     w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_6)

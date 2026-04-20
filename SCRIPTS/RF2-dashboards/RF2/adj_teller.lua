@@ -249,8 +249,15 @@ local function run()
         if adjfuncIdChanged then
             local adjfunction = adjfunctions["id"..currentAdjfuncId]
             if adjfunction ~= nil then
-                for index, value in ipairs(adjfunction.wavs) do
-                    playFile(rf2.baseDir.."SOUNDS/"..value..".wav")
+
+                for i = 1, #adjfunction.wavs do
+                    local value = adjfunction.wavs[i]
+                    -- local soundFile = rf2.baseDir.."SOUNDS/"..value..".wav"
+                    local soundFile = rf2.baseDir.."S/"..value..".wav"
+                    local AUDIO_FILENAME_MAXLEN = 45 -- from audio.h
+                    if #soundFile <= AUDIO_FILENAME_MAXLEN then
+                        playFile(soundFile)
+                    end
                 end
             end
         end

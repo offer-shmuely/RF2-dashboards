@@ -81,7 +81,8 @@ rf2 = {
         volt = "V",
         celsius = " C",
         rpm = " RPM",
-        meters = " m"
+        meters = " m",
+        mah = " mAh"
     },
 
     --[[

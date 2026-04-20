@@ -1,8 +1,23 @@
+---- #########################################################################
+---- #                                                                       #
+---- # License: Creative Commons Attribution-NoDerivatives 4.0 (CC BY-ND)    #
+---- # https://creativecommons.org/licenses/by-nd/4.0/                       #
+---- #                                                                       #
+---- # You are free to use and modify this software for personal use.        #
+---- # You may share this software in its original, unmodified form,         #
+---- # as long as appropriate credit is given to the original author.        #
+---- #                                                                       #
+---- # Redistribution of modified versions is NOT permitted.                 #
+---- #                                                                       #
+---- # Copyright (c) 2023-2026 Offer Shmuely. All rights reserved.           #
+---- #                                                                       #
+---- #########################################################################
+
 local app_name = "RF2-dashboards"
-local app_ver = "2.2.18"
+local app_ver = "2.2.19"
 
 local baseDir = "/SCRIPTS/RF2-dashboards"
-local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
+local inSimu = string.sub(select(2, getVersion()), -4) == "simu"
 
 local timerNumber = 1
 
@@ -12,9 +27,9 @@ local CAPA_LOW_PERCENT = 10
 local CAPA_MEDIUM_PERCENT = 30
 
 
-local err_img = bitmap.open(baseDir.."/img/no_connection_wr.png")
+local err_img = bitmap.open(baseDir .. "/img/no_connection_wr.png")
 
-local m_log = loadScript(baseDir.."/lib_log.lua", "btd")(app_name, baseDir)
+local m_log = loadScript(baseDir .. "/lib_log.lua", "btd")(app_name, baseDir)
 
 local dashboard_styles = {
     [1] = "dashboard_fancy.lua",
@@ -34,7 +49,6 @@ local dashboard_post_styles_do_not_change = dashboard_post_styles[1]
 local dashboard_post_styles_default = dashboard_post_styles[2]
 local dashboard_post_file_name = dashboard_post_styles_default
 
-local runningInSimulator = string.sub(select(2, getVersion()), -4) == "simu"
 local function m_clock()
     return getTime() / 100
 end
@@ -45,7 +59,7 @@ local rf2_curr_model_static_data = {
     craft_name = nil,
     cell_count = 4,
     battery_capacity = nil,
-    rescue_on = nil,
+    -- rescue_on = nil,
     total_flights = nil,
     stat_total_time = nil,
 
@@ -60,14 +74,15 @@ end
 
 local function read_curr_model_static_data()
     -- update rf2_curr_model_static_data
-    rf2_curr_model_static_data.msp_api_version = rf2fc.msp.cache.mspApiVersion or nil
+
+    rf2_curr_model_static_data.craft_name       = rf2fc ~= nil and rf2fc.msp.cache.mspName or "-- Heli not Found --"
+    rf2_curr_model_static_data.cell_count       = rf2fc ~= nil and rf2fc.msp.cache.mspBatteryConfig.batteryCellCount or -1
+    rf2_curr_model_static_data.battery_capacity = rf2fc ~= nil and rf2fc.msp.cache.mspBatteryConfig.batteryCapacity or -1
+    rf2_curr_model_static_data.total_flights    = rf2fc ~= nil and rf2fc.msp.cache.mspFlightStats.stats_total_flights.value or -1
+
+    rf2_curr_model_static_data.stats_total_time = rf2fc ~= nil and rf2fc.msp.cache.mspFlightStats.stats_total_time_s.value or -1
+    rf2_curr_model_static_data.msp_api_version  = rf2fc ~= nil and rf2fc.msp.cache.mspApiVersion or nil
     rf2_curr_model_static_data.craft_id         = nil -- mcu id, command=160, not implemented yet
-    rf2_curr_model_static_data.craft_name       = rf2fc.msp.cache.mspName or "---"
-    rf2_curr_model_static_data.cell_count       = rf2fc.msp.cache.mspBatteryConfig.batteryCellCount or -1
-    rf2_curr_model_static_data.battery_capacity = rf2fc.msp.cache.mspBatteryConfig.batteryCapacity or -1
-    rf2_curr_model_static_data.rescue_on        = rf2fc.msp.cache.mspRescueProfile.mode == 1
-    rf2_curr_model_static_data.total_flights    = rf2fc.msp.cache.mspFlightStats.stats_total_flights.value
-    rf2_curr_model_static_data.stats_total_time = rf2fc.msp.cache.mspFlightStats.stats_total_time_s.value
 end
 
 
@@ -83,7 +98,7 @@ end
 -----------------------------------------------------------------------------------------------------------------
 
 local function getDxByStick(stk)
-    local v = getValue(stk)
+    local v = tonumber(getValue(stk)) or 0
     if math.abs(v) < 5 then return 0 end
     local d = math.ceil(v / 400)
     return d
@@ -113,8 +128,8 @@ local function formatTime(wgt, t1)
     local dd_raw = t1.value
     local isNegative = false
     if dd_raw < 0 then
-      isNegative = true
-      dd_raw = math.abs(dd_raw)
+        isNegative = true
+        dd_raw = math.abs(dd_raw)
     end
 
     local dd = math.floor(dd_raw / 86400)
@@ -127,37 +142,42 @@ local function formatTime(wgt, t1)
 
     local time_str
     if dd == 0 and hh == 0 then
-      -- less than 1 hour, 59:59
-      time_str = string.format("%02d:%02d", mm, ss)
-
+        -- less than 1 hour, 59:59
+        time_str = string.format("%02d:%02d", mm, ss)
     elseif dd == 0 then
-      -- less than 24 hours, 23:59:59
-      time_str = string.format("%02d:%02d:%02d", hh, mm, ss)
+        -- less than 24 hours, 23:59:59
+        time_str = string.format("%02d:%02d:%02d", hh, mm, ss)
     else
-      -- more than 24 hours
-      if wgt.options.use_days == 0 then
-        -- 25:59:59
-        time_str = string.format("%02d:%02d:%02d", dd * 24 + hh, mm, ss)
-      else
-        -- 5d 23:59:59
-        time_str = string.format("%dd %02d:%02d:%02d", dd, hh, mm, ss)
-      end
+        -- more than 24 hours
+        if wgt.options.use_days == 0 then
+            -- 25:59:59
+            time_str = string.format("%02d:%02d:%02d", dd * 24 + hh, mm, ss)
+        else
+            -- 5d 23:59:59
+            time_str = string.format("%dd %02d:%02d:%02d", dd, hh, mm, ss)
+        end
     end
     if isNegative then
-      time_str = '-' .. time_str
+        time_str = '-' .. time_str
     end
     return time_str, isNegative
 end
 
 local function build_ui(wgt, file_name)
-    curr_dashboard = assert(loadScript(baseDir .. "/dashboards/" ..file_name, "btd")(m_log.info, app_name, baseDir , wgt.tools, wgt.statusbar, inSimu))
+    curr_dashboard = assert(loadScript(baseDir .. "/dashboards/" .. file_name, "btd")(m_log.info, app_name, baseDir, wgt.tools, wgt.statusbar, inSimu))
+    if curr_dashboard == nil then
+        log("failed to load dashboard file: %s", file_name)
+        return
+    end
     curr_dashboard.build_ui(wgt)
 end
 
 -------------------------------------------------------------------
 local function close()
-    lvgl.confirm({title="Exit", message="exit config?",
-        confirm=(function() lvgl.exitFullScreen() end)
+    lvgl.confirm({
+        title = "Exit",
+        message = "exit config?",
+        confirm = (function() lvgl.exitFullScreen() end)
     })
 end
 
@@ -167,7 +187,6 @@ local is_dbg_craft_change = false
 local dbgReplImgTime = 0
 local dbgImgTp = 0
 local function updateCraftName(wgt)
-
     if is_dbg_craft_change == true then
         if (m_clock() - dbgReplImgTime > 5) then
             log("updateCraftName - interval")
@@ -225,7 +244,7 @@ local function updateImage(wgt)
         return
     end
 
-    wgt.values.img_craft_image_name = baseDir.."/img/rf2_logo.png"
+    wgt.values.img_craft_image_name = baseDir .. "/img/rf2_logo.png"
 end
 
 local function updateTimeCount(wgt)
@@ -253,45 +272,45 @@ local function updateProfiles(wgt)
 end
 
 local function updateCell(wgt)
-    local vbat     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.batt_voltage)
-    local vbat_min = wgt.tlmEngine.valueMin(wgt.tlmEngine.sensorTable.batt_voltage)
+    local vbat              = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.batt_voltage)
+    local vbat_min          = wgt.tlmEngine.valueMin(wgt.tlmEngine.sensorTable.batt_voltage)
 
-    local cell_count = rf2_curr_model_static_data.cell_count or 1
+    local cell_count        = rf2_curr_model_static_data.cell_count or 1
 
-    local vcel = cell_count > 0 and (vbat / cell_count) or 0
-    local vcel_min = cell_count > 0 and (vbat_min / cell_count) or 0
+    local vcel              = cell_count > 0 and (vbat / cell_count) or 0
+    local vcel_min          = cell_count > 0 and (vbat_min / cell_count) or 0
 
-    local batPercent = wgt.tools.getCellPercent(vcel)
+    local batPercent        = wgt.tools.getCellPercent(vcel)
     -- log("vbat: %s, vcel: %s, BatPercent: %s", vbat, vcel, batPercent)
 
-    wgt.values.vbat = vbat
-    wgt.values.vcel = vcel
-    wgt.values.vcel_min = vcel_min
+    wgt.values.vbat         = vbat
+    wgt.values.vcel         = vcel
+    wgt.values.vcel_min     = vcel_min
     wgt.values.cell_percent = batPercent
-    wgt.values.volt = (wgt.options.showTotalVoltage==1) and vbat or vcel
-    wgt.values.cellColor = (vcel < VCEL_LOW_THRESHOLD) and RED or lcd.RGB(0x00963A) --GREEN
+    wgt.values.volt         = (wgt.options.showTotalVoltage == 1) and vbat or vcel
+    wgt.values.cellColor    = (vcel < VCEL_LOW_THRESHOLD) and RED or lcd.RGB(0x00963A) --GREEN
 end
 
 local function updateCurr(wgt)
-    local curr_top = wgt.options.currTop
-    local val     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.current)
-    local val_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.current)
+    local curr_top              = wgt.options.currTop
+    local val                   = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.current)
+    local val_max               = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.current)
     -- log("telemetery8: updateCurr:  curr: %s, curr_max: %s", curr, curr_max)
 
-    wgt.values.curr = val
-    wgt.values.curr_max = val_max
-    wgt.values.curr_percent     = math.min(100, math.floor(100 * (val     / curr_top)))
+    wgt.values.curr             = val
+    wgt.values.curr_max         = val_max
+    wgt.values.curr_percent     = math.min(100, math.floor(100 * (val / curr_top)))
     wgt.values.curr_max_percent = math.min(100, math.floor(100 * (val_max / curr_top)))
 end
 
 local function updateCapa(wgt)
     -- capacity
-    local val  = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.capa)
+    local val            = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.capa)
 
-    wgt.values.capaTotal = (rf2_curr_model_static_data.battery_capacity or 0) * (100-wgt.options.reserve_capa) // 100
-    wgt.values.capaUsed = val
+    wgt.values.capaTotal = (rf2_curr_model_static_data.battery_capacity or 0) * (100 - wgt.options.reserve_capa) // 100
+    wgt.values.capaUsed  = val
 
-    if wgt.values.capaTotal==nil or wgt.values.capaTotal==nan or wgt.values.capaTotal==0 then
+    if wgt.values.capaTotal == nil or wgt.values.capaTotal == 0 then
         wgt.values.capaTotal = -1
         wgt.values.capaUsed = 0
     end
@@ -324,20 +343,16 @@ local function updateModelStats(wgt)
     local flight_count_from_flight_widget = model.getGlobalVariable(8, 0)
     local flight_count_from_firmware_2_4 = rf2_curr_model_static_data.total_flights
     local num_flights
-    if (flight_count_from_firmware_2_4 == nil or flight_count_from_firmware_2_4 ==0)
+    if (flight_count_from_firmware_2_4 == nil or flight_count_from_firmware_2_4 == 0)
         and flight_count_from_flight_widget ~= nil
         and flight_count_from_flight_widget >= 0
-        then
-
+    then
         num_flights = flight_count_from_flight_widget
     else
         num_flights = flight_count_from_firmware_2_4
     end
 
     wgt.values.model_total_flights = num_flights
-    -- log("[updateFlightStat] Total flights: [%s]", wgt.values.model_total_flights)
-    -- wgt.values.model_total_time = rf2_curr_model_static_data.stats_total_time or 0
-    -- wgt.values.model_total_time_str = formatTime(wgt, {value=wgt.values.model_total_time//60})
 end
 
 local function updateFlightStage(wgt)
@@ -346,11 +361,11 @@ local function updateFlightStage(wgt)
 end
 
 local function updateArm(wgt)
-    wgt.values.is_arm           = wgt.tlmEngine.armingToolsIsArmed()
-    wgt.values.is_arm_requested = wgt.tlmEngine.armingToolsIsArmRequested()
-    wgt.values.arm_fail = (wgt.values.is_arm_requested == true and wgt.values.is_arm == false)
+    wgt.values.is_arm                 = wgt.tlmEngine.armingToolsIsArmed()
+    wgt.values.is_arm_requested       = wgt.tlmEngine.armingToolsIsArmRequested()
+    wgt.values.arm_fail               = (wgt.values.is_arm_requested == true and wgt.values.is_arm == false)
     wgt.values.arm_disable_flags_list = {}
-    wgt.values.arm_disable_flags_txt = ""
+    wgt.values.arm_disable_flags_txt  = ""
 
     if wgt.values.arm_fail == true then
         local flagList = wgt.tlmEngine.armingToolsArmDisabledFlags()
@@ -376,9 +391,9 @@ local function updateThr(wgt)
 end
 
 local function updateTemperature(wgt)
-    local tempTop = wgt.options.tempTop
-    wgt.values.EscT     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.temp_esc)
-    wgt.values.EscT_max = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.temp_esc)
+    local tempTop               = wgt.options.tempTop
+    wgt.values.EscT             = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.temp_esc)
+    wgt.values.EscT_max         = wgt.tlmEngine.valueMax(wgt.tlmEngine.sensorTable.temp_esc)
 
     wgt.values.EscT_percent     = math.min(100, math.floor(100 * (wgt.values.EscT / tempTop)))
     wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
@@ -405,15 +420,12 @@ local function onFlightStateChanged(wgt, oldState, newState)
     if newState == wgt.task_flight_stage.FLIGHT_STATE.PRE_FLIGHT then
         build_ui(wgt, dashboard_file_name)
         wgt.tlmEngine.is_post_flight = false
-
     elseif newState == wgt.task_flight_stage.FLIGHT_STATE.ON_AIR_PENDING then
         wgt.tlmEngine.resetSensorsMinMax()
         wgt.tlmEngine.is_post_flight = false
-
     elseif newState == wgt.task_flight_stage.FLIGHT_STATE.ON_AIR then
         build_ui(wgt, dashboard_file_name)
         wgt.tlmEngine.is_post_flight = false
-
     elseif newState == wgt.task_flight_stage.FLIGHT_STATE.POST_FLIGHT then
         build_ui(wgt, dashboard_post_file_name)
         wgt.tlmEngine.is_post_flight = true
@@ -507,14 +519,14 @@ local function update(wgt, options)
     updateOnNoConnection(wgt)
 
     wgt.tools     = assert(loadScript(baseDir .. "/lib_widget_tools.lua", "btd"))(m_log, app_name)
-    wgt.statusbar = assert(loadScript(baseDir .. "/parts/statusbar.lua",  "btd"))(m_log.info, app_name, wgt.tools)
-    wgt.tlmEngine = assert(loadScript(baseDir .. "/telemetry_engine.lua", "btd"))(m_log.info, app_name, runningInSimulator)
+    wgt.statusbar = assert(loadScript(baseDir .. "/parts/statusbar.lua", "btd"))(m_log.info, app_name, wgt.tools)
+    wgt.tlmEngine = assert(loadScript(baseDir .. "/telemetry_engine.lua", "btd"))(m_log.info, app_name, inSimu)
     log("x-telemetery tlmTask: %s", wgt.tlmEngine)
     wgt.tlmEngine.init(wgt)
 
     wgt.periodicResetTlmAfterConnection = wgt.tools.periodicInit()
 
-    wgt.task_capa_audio = loadScript(baseDir .. "/tasks/task_capa_audio.lua", "btd")(baseDir, log, app_name, curr_dashboard)
+    wgt.task_capa_audio = loadScript(baseDir .. "/tasks/task_capa_audio.lua", "btd")(baseDir, log, app_name)
     wgt.task_capa_audio.init()
 
     wgt.task_flight_stage = loadScript(baseDir .. "/tasks/task_flight_stage.lua", "btd")(wgt, baseDir, log, app_name, onFlightStateChanged)
@@ -529,7 +541,7 @@ local function update(wgt, options)
 end
 
 local function create(zone, options)
-    local wgt = {zone=zone, options=options}
+    local wgt = { zone = zone, options = options }
     return update(wgt, options)
 end
 
@@ -537,7 +549,7 @@ local function background(wgt)
     local prev_is_connected = wgt.is_connected
     wgt.is_connected = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.is_connected)
 
-    if prev_is_connected==false and wgt.is_connected==true and wgt.task_flight_stage.isOnPreFlight() then
+    if prev_is_connected == false and wgt.is_connected == true and wgt.task_flight_stage.isOnPreFlight() then
         log("background: connection re-established")
         wgt.tlmEngine.resetSensorsMinMax()
         wgt.tools.periodicStart(wgt.periodicResetTlmAfterConnection, 4000)
@@ -550,7 +562,7 @@ local function background(wgt)
         wgt.tlmEngine.resetSensorsMinMax()
     end
 
-    if wgt.task_flight_stage.isPostFlight()==false then
+    if wgt.task_flight_stage.isPostFlight() == false then
         wgt.tlmEngine.updatePostFlightValues()
     end
 
@@ -568,7 +580,7 @@ local function background(wgt)
     updateFlightStage(wgt)
     updateArm(wgt)
 
-    wgt.task_capa_audio.run(wgt)
+    wgt.task_capa_audio.run(wgt, curr_dashboard)
     wgt.task_flight_stage.run(wgt)
 
     if wgt.is_connected == false then
@@ -590,10 +602,10 @@ local function refresh(wgt, event, touchState)
 
     background(wgt)
 
-    if curr_dashboard.refresh ~= nil then
+    if curr_dashboard and curr_dashboard.refresh ~= nil then
         curr_dashboard.refresh(wgt, event, touchState)
     end
---    dbgLayout(wgt)
+    --    dbgLayout(wgt)
 end
 
-return {create=create, update=update, background=background, refresh=refresh}
+return { create = create, update = update, background = background, refresh = refresh }

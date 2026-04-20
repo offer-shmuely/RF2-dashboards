@@ -2,20 +2,16 @@ local app_name = "rf2_server"
 local baseDir = "/SCRIPTS/RF2-dashboards"
 
 rf2fc = {
-    mspCacheTools = nil,
     msp = {
         ctl = {
             connected = false,
             msp_rx_request = false,
             mspStatus = false,
             mspName = false,
-            -- mspDataflash = false,
             mspFlightStats = false,
-            -- mspGovernorConfig = false,
             lastServerTime = 0,
             lastUpdateTime = 0,
         },
-        -- crsf_telemetry_sensors = {},
         cache = {
             mspName = nil,
             mspStatus = {
@@ -26,13 +22,16 @@ rf2fc = {
                 profile = nil,
                 rateProfile = nil,
             },
-            -- mspDataflash = {
-            --     ready = nil,
-            --     supported = nil,
-            --     sectors = nil,
-            --     totalSize = nil,
-            --     usedSize = nil,
-            -- },
+            mspTelemetryConfig = {
+                telemetry_inverted = nil,
+                telemetry_halfduplex = nil,
+                telemetry_sensors = nil,
+                telemetry_pinswap = nil,
+                crsf_telemetry_mode = nil,
+                crsf_telemetry_rate = nil,
+                crsf_telemetry_ratio = nil,
+                crsf_telemetry_sensors = nil,
+            },
             mspFlightStats = {
                 stats_total_flights = {value = nil},
                 stats_total_time_s = {value = nil},
@@ -41,64 +40,11 @@ rf2fc = {
                 -- Calculated fields
                 statsEnabled = {value = nil},
             },
-
-            -- mspGovernorConfig = {
-            --     gov_mode = nil,
-            --     gov_startup_time = nil,
-            --     gov_spoolup_time = nil,
-            --     gov_tracking_time = nil,
-            --     gov_recovery_time = nil,
-            --     gov_zero_throttle_timeout = nil,
-            --     gov_lost_headspeed_timeout = nil,
-            --     gov_autorotation_timeout = nil,
-            --     gov_autorotation_bailout_time = nil,
-            --     gov_autorotation_min_entry_time = nil,
-            --     gov_handover_throttle = nil,
-            --     gov_pwr_filter = nil,
-            --     gov_rpm_filter = nil,
-            --     gov_tta_filter = nil,
-            --     gov_ff_filter = nil,
-            -- },
             mspBatteryConfig = {
                 batteryCapacity = nil,
                 batteryCellCount = nil,
-                voltageMeterSource = nil,
-                currentMeterSource = nil,
-                vbatMinCellVoltage = nil,
-                vbatMaxCellVoltage = nil,
-                vbatFullCellVoltage = nil,
-                vbatWarningCellVoltage = nil,
-                lvcPercentage = nil,
-                consumptionWarningPercentage = nil,
             },
-            -- mspBatteryState = {
-            --     batteryState = nil,
-            --     batteryCellCount = nil,
-            --     batteryCapacity = nil,
-            --     batteryCapacityUsed = nil,
-            --     batteryVoltage = nil,
-            --     batteryCurrent = nil,
-            --     batteryPercentageRemaining = nil,
-            -- },
-            mspRescueProfile = {
-                mode = nil,
-                flip_mode = nil,
-            },
-            -- mspTelemetryConfig = {
-            --     telemetry_inverted = nil,
-            --     telemetry_halfduplex = nil,
-            --     telemetry_sensors = nil,
-            --     telemetry_pinswap = nil,
-            --     crsf_telemetry_mode = nil,
-            --     crsf_telemetry_rate = nil,
-            --     crsf_telemetry_ratio = nil,
-            --     crsf_telemetry_sensors = nil,
-            -- },
-
         },
-        telem = {
-
-        }
     }
 }
 
@@ -170,9 +116,6 @@ local function create(zone, options)
         zone = zone,
         options = options
     }
-    wgt.mspCacheTools = assert(loadScript(baseDir .. "/RF2/mspCacheTools.lua", "btd"))()
-    rf2fc.mspCacheTools = wgt.mspCacheTools
-
     return update(wgt, options)
 end
 -----------------------------------------------------------------------------------------------------------------
@@ -219,8 +162,6 @@ local function state_RETRIVE_PERMANENT_INFO_INIT(wgt)
 
     rf2fc.msp.ctl.msp_rx_request = true
     rf2fc.msp.ctl.mspName = false
-    -- rf2fc.msp.ctl.mspGovernorConfig = false
-    rf2fc.msp.ctl.mspRescueProfile = false
 
     log("msp_rx_request: %s", rf2fc.msp.ctl.msp_rx_request)
 
@@ -249,46 +190,9 @@ local function state_RETRIVE_PERMANENT_INFO_INIT(wgt)
         rf2fc.msp.ctl.lastUpdateTime = rf2.clock()
         -- log("MSP> mspBatteryConfig: %s", tableToString(ret))
         rf2fc.msp.cache.mspBatteryConfig = ret
-
         -- log("MSP> mspBatteryConfig batteryCapacity: %s",        rf2fc.msp.cache.mspBatteryConfig.batteryCapacity)
         -- log("MSP> mspBatteryConfig batteryCellCount: %s",       rf2fc.msp.cache.mspBatteryConfig.batteryCellCount)
-        -- log("MSP> mspBatteryConfig voltageMeterSource: %s",     rf2fc.msp.cache.mspBatteryConfig.voltageMeterSource)
-        -- log("MSP> mspBatteryConfig currentMeterSource: %s",     rf2fc.msp.cache.mspBatteryConfig.currentMeterSource)
-        -- log("MSP> mspBatteryConfig vbatMinCellVoltage: %s",     rf2fc.msp.cache.mspBatteryConfig.vbatMinCellVoltage)
-        -- log("MSP> mspBatteryConfig vbatMaxCellVoltage: %s",     rf2fc.msp.cache.mspBatteryConfig.vbatMaxCellVoltage)
-        -- log("MSP> mspBatteryConfig vbatFullCellVoltage: %s",    rf2fc.msp.cache.mspBatteryConfig.vbatFullCellVoltage)
-        -- log("MSP> mspBatteryConfig vbatWarningCellVoltage: %s", rf2fc.msp.cache.mspBatteryConfig.vbatWarningCellVoltage)
-        -- log("MSP> mspBatteryConfig lvcPercentage: %s",          rf2fc.msp.cache.mspBatteryConfig.lvcPercentage)
-        -- log("MSP> mspBatteryConfig consumptionWarningPercentage: %s", rf2fc.msp.cache.mspBatteryConfig.consumptionWarningPercentage)
-
         rf2fc.msp.ctl.mspBatteryConfig = true
-    end)
-
-    -- -- mspGovernorConfig
-    -- rf2.useApi("mspGovernorConfig").read(function(_, ret)
-    --     rf2fc.msp.ctl.connected = true
-    --     rf2fc.msp.ctl.lastUpdateTime = rf2.clock()
-    --     log("MSP> mspGovernorConfig: %s", tableToString(ret))
-    --     rf2fc.msp.cache.mspGovernorConfig = ret
-    --     -- log("MSP> mspGovernorConfig: gov_mode: %s", tableToString(ret.gov_mode))
-    --     -- log("MSP> mspGovernorConfig: gov_mode: %s", ret.gov_mode.value)
-    --     -- log("MSP> mspGovernorConfig: gov_mode: %s", ret.gov_mode.table[ret.gov_mode.value])
-    --     -- log("MSP> mspGovernorConfig: %s", tableToString(ret.gov_autorotation_bailout_time))
-    --     log("MSP> mspGovernorConfig: governorMode: %s", wgt.mspCacheTools.governorMode())
-    --     log("MSP> mspGovernorConfig: governorMode----: %s", wgt.mspCacheTools.governorMode())
-    --     log("MSP> mspGovernorConfig: governorEnabled: %s", wgt.mspCacheTools.governorEnabled())
-
-    --     rf2fc.msp.ctl.mspGovernorConfig = true
-    -- end)
-
-    -- mspRescueProfile
-    rf2.useApi("mspRescueProfile").read(function(_, ret)
-        rf2fc.msp.ctl.connected = true
-        rf2fc.msp.ctl.lastUpdateTime = rf2.clock()
-        log("MSP> mspRescueProfile: %s", tableToString(ret))
-        rf2fc.msp.cache.mspRescueProfile = ret
-
-        rf2fc.msp.ctl.mspRescueProfile = true
     end)
 
     reqTS = rf2.clock()
@@ -299,13 +203,9 @@ local function state_RETRIVE_PERMANENT_INFO(wgt)
     log("STATE.RETRIVE_PERMANENT_INFO")
 
     log("rf2fc.msp.ctl.mspName: %s", rf2fc.msp.ctl.mspName)
-    -- log("rf2fc.msp.ctl.mspGovernorConfig: %s", rf2fc.msp.ctl.mspGovernorConfig)
-    log("rf2fc.msp.ctl.mspRescueProfile: %s", rf2fc.msp.ctl.mspRescueProfile)
 
     if      rf2fc.msp.ctl.mspName           == true
         and rf2fc.msp.ctl.mspBatteryConfig  == true
-        -- and rf2fc.msp.ctl.mspGovernorConfig == true
-        and rf2fc.msp.ctl.mspRescueProfile  == true
         then
 
         rf2fc.msp.ctl.msp_rx_request = false
@@ -325,7 +225,7 @@ local function state_RETRIVE_LIVE_INFO_INIT(wgt)
 
     rf2fc.msp.ctl.msp_rx_request = true
     rf2fc.msp.ctl.mspStatus = false
-    -- rf2fc.msp.ctl.mspDataflash = false
+    rf2fc.msp.ctl.mspTelemetryConfig = false
     rf2fc.msp.ctl.mspFlightStats = false
 
     log("msp_rx_request: %s", rf2fc.msp.ctl.msp_rx_request)
@@ -340,43 +240,20 @@ local function state_RETRIVE_LIVE_INFO_INIT(wgt)
         rf2fc.msp.ctl.mspStatus = true
     end)
 
-
-    -- -- mspBatteryState
-    -- rf2.useApi("mspBatteryState").getData(function(_, ret)
-    --     rf2fc.msp.ctl.connected = true
-    --     rf2fc.msp.ctl.lastUpdateTime = rf2.clock()
-    --     -- log("MSP> mspBatteryState: %s", tableToString(ret))
-    --     rf2fc.msp.cache.mspBatteryState = ret
-
-    --     -- log("MSP> mspBatteryState batteryState: %s",         rf2fc.msp.cache.mspBatteryState.batteryState)
-    --     -- log("MSP> mspBatteryState batteryCellCount: %s",     rf2fc.msp.cache.mspBatteryState.getBatteryCellCountatteryCellCount)
-    --     -- log("MSP> mspBatteryState batteryCapacity: %s",      rf2fc.msp.cache.mspBatteryState.batteryCapacity)
-    --     -- log("MSP> mspBatteryState batteryCapacityUsed: %s",  rf2fc.msp.cache.mspBatteryState.batteryCapacityUsed)
-    --     -- log("MSP> mspBatteryState batteryVoltage: %s",       rf2fc.msp.cache.mspBatteryState.batteryVoltage)
-    --     -- log("MSP> mspBatteryState batteryCurrent: %s",       rf2fc.msp.cache.mspBatteryState.getBatteryCurrent)
-    --     -- log("MSP> mspBatteryState batteryPercentageRemaining: %s",    rf2fc.msp.cache.mspBatteryState.batteryPercentageRemaining)
-
-    --     rf2fc.msp.ctl.mspBatteryState = true
-    -- end)
-
-    -- -- mspDataflash
-    -- rf2.useApi("mspDataflash").getDataflashSummary(function(_, ret)
-    --     rf2fc.msp.ctl.connected = true
-    --     rf2fc.msp.ctl.lastUpdateTime = rf2.clock()
-    --     -- log("MSP> mspDataflash: %s", tableToString(ret))
-    --     rf2fc.msp.cache.mspDataflash = ret
-    --     -- log("MSP> mspDataflash total: %s, used: %s, free: %s", wgt.mspCacheTools.blackboxSize().totalSize, wgt.mspCacheTools.blackboxSize().usedSize, wgt.mspCacheTools.blackboxSize().freeSize)
-    --     rf2fc.msp.ctl.mspDataflash = true
-    -- end)
+    -- mspTelemetryConfig
+    rf2.useApi("mspTelemetryConfig").getTelemetryConfig(function(_, ret)
+        -- log("MSP> mspTelemetryConfig: %s", tableToString(ret))
+        rf2fc.msp.cache.mspTelemetryConfig = ret
+        log("MSP> mspTelemetryConfig crsf_telemetry_mode: %s, crsf_telemetry_rate: %s, crsf_telemetry_ratio: %s", ret.crsf_telemetry_mode.value, ret.crsf_telemetry_rate.value, ret.crsf_telemetry_ratio.value)
+        rf2fc.msp.ctl.mspTelemetryConfig = true
+    end)
 
     local function onReceiveFlightStat(x, config)
         -- rf2.log("Total flights 2: [%s]", config.stats_total_flights.value)
         -- rf2.log("Total flights 3: [%s]", rf2fc.msp.cache.mspFlightStats.stats_total_flights.value)
-
         rf2fc.msp.ctl.connected = true
         rf2fc.msp.ctl.lastUpdateTime = rf2.clock()
         rf2fc.msp.ctl.mspFlightStats = true
-        log("MSP> mspFlightStats: %s", tableToString(ret))
         log("MSP> mspFlightStats stats_total_flights: %s, stats_total_time_s: %s, stats_min_armed_time_s: %s, statsEnabled: %s",
             rf2fc.msp.cache.mspFlightStats.stats_total_flights.value,
             rf2fc.msp.cache.mspFlightStats.stats_total_time_s.value,
@@ -386,7 +263,7 @@ local function state_RETRIVE_LIVE_INFO_INIT(wgt)
 
     -- flights count
     if rf2.apiVersion >= 12.09 then
-        rf2.useApi("mspFlightStats").read(onReceiveFlightStat, self, rf2fc.msp.cache.mspFlightStats)
+        rf2.useApi("mspFlightStats").read(onReceiveFlightStat, nil, rf2fc.msp.cache.mspFlightStats)
     else
         rf2fc.msp.ctl.mspFlightStats = true
     end
@@ -401,7 +278,7 @@ local function state_RETRIVE_LIVE_INFO(wgt)
 
     if rf2fc.msp.ctl.mspStatus == true
         -- and rf2fc.msp.ctl.mspBatteryState == true
-        -- and rf2fc.msp.ctl.mspDataflash == true
+        and rf2fc.msp.ctl.mspTelemetryConfig == true
         and rf2fc.msp.ctl.mspFlightStats == true
     then
         rf2fc.msp.ctl.msp_rx_request = false

@@ -417,7 +417,7 @@ function M.isWarn(sensor)
         return false
     end
     if sensor.isWarn ~=nil then
-        log("for statusbar telemetry.isWarn(%s) --> %s", sensor.name, sensor.isWarn())
+        -- log("for statusbar telemetry.isWarn(%s) --> %s", sensor.name, sensor.isWarn())
         return sensor.isWarn()
     end
     return false
@@ -428,7 +428,7 @@ function M.isAlert(sensor)
         return false
     end
     if sensor.isAlert ~=nil then
-        log("for statusbar telemetry.isAlert(%s) --> %s", sensor.name, sensor.isAlert())
+        -- log("for statusbar telemetry.isAlert(%s) --> %s", sensor.name, sensor.isAlert())
         return sensor.isAlert()
     end
     return false
@@ -493,19 +493,9 @@ function M.armingToolsArmDisabledFlags()
     return result
 end
 
-
---[[
-    Function: telemetry.active
-    Description: Checks if telemetry is active. Returns true if the system is in simulation mode, otherwise returns the state of telemetry.
-    Returns:
-        - boolean: true if in simulation mode or telemetry is active, false otherwise.
-]]
-function M.active()
-    return rfsuite.session.telemetryState or false
-end
-
 function M.init(wgt)
-    protocol = 0searchForProtocol()
+    protocol = 0
+    searchForProtocol()
 
     -- update user selection from options
     sensorTable.current.maxCurrentFromOptions = wgt.options.currTop or 1000
