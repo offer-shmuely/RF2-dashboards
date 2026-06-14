@@ -14,7 +14,7 @@
 ---- #########################################################################
 
 local app_name = "RF2-dashboards"
-local app_ver = "2.2.19"
+local app_ver = "2.2.20"
 
 local baseDir = "/SCRIPTS/RF2-dashboards"
 local inSimu = string.sub(select(2, getVersion()), -4) == "simu"
