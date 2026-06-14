@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## next
 
-## [2.2.19] - 2026-06
+## [2.2.20] - 2026-06
 
 ### Added
 - **Sensor Diagnostics View**: New app-mode screen that validates each telemetry sensor — shows whether it is defined in Rotorflight, discovered in the TX sensor list, and unique (no duplicates). Includes a "Run Tests" button and per-sensor "Info" popup with remediation hints
