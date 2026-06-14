@@ -87,22 +87,33 @@ local RF_SENSOR_ID_BY_SOURCE = {
     Vbat = 3,
     Curr = 4,
     Capa = 5,
+    ["Cel#"] = 7,
     Thr = 15,
     Vbec = 43,
     Tesc = 50,
     Hspd = 60,
     ARM = 90,
     ARMD = 91,
+    Gov = 93,
     ["PID#"] = 95,
     ["RTE#"] = 96,
+    ["BAT#"] = 97,
 }
 
 local function isDefinedInRf(sensorName)
+    if sensorName == "TPWR" or sensorName == "RQly" then
+        return nil
+    end
+
+    if rf2fc == nil or rf2fc.msp == nil or rf2fc.msp.cache == nil or rf2fc.msp.cache.mspTelemetryConfig == nil then
+        log("is_defined_in_rf: rf2 telemetry config unavailable")
+        return false
+    end
 
     local crsf_telemetry_sensors = rf2fc.msp.cache.mspTelemetryConfig.crsf_telemetry_sensors
 
     if crsf_telemetry_sensors == nil then
-        return true --???
+        return false --???
     end
 
     local sensorId = RF_SENSOR_ID_BY_SOURCE[sensorName]
@@ -118,7 +129,7 @@ local function isDefinedInRf(sensorName)
         end
     end
 
-    local telemetrySensorsMask = cfg.telemetry_sensors
+    local telemetrySensorsMask = rf2fc.msp.cache.mspTelemetryConfig.telemetry_sensors
     if type(telemetrySensorsMask) == "table" then
         telemetrySensorsMask = telemetrySensorsMask.value
     end
@@ -215,18 +226,6 @@ local function runTests()
     testState.ran = true
 end
 
-
--- local function runTests()
---     log("run_tests: running sensor diagnostics")
-
---     testState.ran = false
---     requestTelemetryConfig(
---         function(cfg)
---             log("run_tests: telemetry config available=%s", tostring(cfg ~= nil))
---             runTestsWithConfig(cfg)
---         end
---     )
--- end
 
 ---------------------------------------------------------------------------------------------------
 local M = {}
@@ -441,19 +440,19 @@ M.build_ui = function(wgt)
         })
     end
 
-    bList:build({
-        {type="label", x=10*lvSCALE, y=last_y + 40*lvSCALE, font=FS.FONT_6, color=LIGHTGREY,
-            text=function()
-                local cfg = rf2fc.msp.cache.mspTelemetryConfig
-                if cfg == nil or cfg.crsf_telemetry_mode == nil or cfg.crsf_telemetry_rate == nil or cfg.crsf_telemetry_ratio == nil then
-                    return "Telemetry config: N/A"
-                end
-                return string.format("Telemetry config: crsf_mode=%s rate=%s ratio=%s",
-                    cfg.crsf_telemetry_mode.value, cfg.crsf_telemetry_rate.value, cfg.crsf_telemetry_ratio.value)
-                    -- return "Telemetry config: N/A"
-            end,
-        }
-    })
+    -- bList:build({
+    --     {type="label", x=10*lvSCALE, y=last_y + 40*lvSCALE, font=FS.FONT_6, color=LIGHTGREY,
+    --         text=function()
+    --             local cfg = rf2fc.msp.cache.mspTelemetryConfig
+    --             if cfg == nil or cfg.crsf_telemetry_mode == nil or cfg.crsf_telemetry_rate == nil or cfg.crsf_telemetry_ratio == nil then
+    --                 return "Telemetry config: N/A"
+    --             end
+    --             return string.format("Telemetry config: crsf_mode=%s rate=%s ratio=%s",
+    --                 cfg.crsf_telemetry_mode.value, cfg.crsf_telemetry_rate.value, cfg.crsf_telemetry_ratio.value)
+    --                 -- return "Telemetry config: N/A"
+    --         end,
+    --     }
+    -- })
 end
 
 

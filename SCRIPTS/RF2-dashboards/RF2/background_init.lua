@@ -15,7 +15,7 @@ local function waitForCrsfSensorsDiscovery()
         return 0
     end
 
-    local sensorsDiscovered = hasSensor("TPWR")
+    local sensorsDiscovered = hasSensor("TPWR") or hasSensor("RFMD")
     if not sensorsDiscovered then
         -- Wait 10 secs for telemetry script to discover sensors before continuing with MSP calls,
         -- since MSP can interfere with discovering custom sensors
@@ -81,7 +81,11 @@ local function initializeQueue()
                     --if autoSetName then
                     --    setModelName(rf2.modelName)
                     --end
-                    -- playTone(1600, 300, 0, PLAY_BACKGROUND)
+                    playTone(784, 125, 0)   -- G5
+                    playTone(880, 125, 0)   -- A5
+                    playTone(988, 125, 0)   -- B5
+                    playTone(1047, 125, 0)  -- C6
+
                     pacmanPlayExtraLife()  -- Extra life awarded
                     --rf2.print("RTC set")
                     rf2.mspQueue.maxRetries = 3

@@ -1,4 +1,4 @@
--- Usage: local mspSendRequest, mspProcessTxQ, mspPollReply, mspClearTxBuf = rf2.executeScript("MSP/common")
+-- Usage: local mspSendRequest, mspProcessTxQ, mspPollReply, mspClearRxTxBufs = rf2.executeScript("MSP/common")
 
 local mspSeq = 0 -- Sequence number for next MSP packet
 local mspRemoteSeq = 0
@@ -14,7 +14,6 @@ local mspTxIdx = 1
 local mspTxCRC = 0
 
 local protocolScript = "MSP/" .. rf2.executeScript("protocols")
---rf2.log("protocolScript: %s",protocolScript)
 local mspSend, mspPoll, telemetryPush, maxTxBufferSize, maxRxBufferSize = rf2.executeScript(protocolScript)
 
 local function mspProcessTxQ()
@@ -128,17 +127,21 @@ end
 
 local function mspPollReply()
     local startTime = rf2.clock()
-    while (rf2.clock() - startTime < 0.005) do -- was 0.05, but this cause CPU-LIMIT on Tx15s
+    while rf2.clock() - startTime < 0.005 do
         local mspData = mspPoll()
-        if mspData ~= nil and mspReceivedReply(mspData) then
+        if mspData == nil then
+            return
+        end
+        if mspReceivedReply(mspData) then
             mspLastReq = 0
             return mspRxReq, mspRxBuf, mspRxError
         end
     end
 end
 
-local function mspClearTxBuf()
+local function mspClearRxTxBufs()
     mspTxBuf = {}
+    while mspPoll() do end
 end
 
-return mspSendRequest, mspProcessTxQ, mspPollReply, mspClearTxBuf
+return mspSendRequest, mspProcessTxQ, mspPollReply, mspClearRxTxBufs

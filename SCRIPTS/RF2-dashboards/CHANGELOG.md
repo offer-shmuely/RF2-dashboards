@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## next
 
+## [2.2.19] - 2026-06
+
+### Added
+- **Sensor Diagnostics View**: New app-mode screen that validates each telemetry sensor — shows whether it is defined in Rotorflight, discovered in the TX sensor list, and unique (no duplicates). Includes a "Run Tests" button and per-sensor "Info" popup with remediation hints
+- **Battery Profile MSP**: New `mspBatteryProfile` API (MSP 12.9+) for reading/writing the active battery profile
+- **ROTORFL Rate Profile**: Added RotorFlight native rate type with its default values and column layout
+
+### Changed
+- **Sound files**: Moved from `RF2/SOUNDS/` to the shorter `RF2/S/` directory, this caused some teller audion to be ignored (full path exceed EdgeTX's 45-character limit)
+`max_font_size` correctly at all sizes
+- **statusbar**: Slide animation disabled
+
 ## [2.2.18] - 2026-03
 
 ### Added

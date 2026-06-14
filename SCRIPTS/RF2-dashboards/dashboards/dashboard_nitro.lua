@@ -39,19 +39,17 @@ M.build_ui = function(wgt)
     local txtColor = wgt.options.textColor
     local titleGreyColor = LIGHTGREY
 
-    local dx = 20
-
     lvgl.clear()
 
     -- global
     lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
 
     -- top bar
-    lvgl.box({x=0, y=0, w=LCD_W, h=40, visible=function() return wgt.isNeedTopbar end,
+    lvgl.box({x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, visible=function() return wgt.isNeedTopbar end,
         children={
-            {type="rectangle", x=0, y=0, w=LCD_W, h=40, color=DARKGREY, filled=true},
-            {type="label", x=60, y=1, font=FS.FONT_16, color=txtColor, text=function() return wgt.values.craft_name end},
-            {type="image", x=0, y=0, w=45, h=45, file="/SCRIPTS/RF2-dashboards/img/rf2_logo.png"},
+            {type="rectangle", x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, color=DARKGREY, filled=true},
+            {type="label", x=60*lvSCALE, y=2*lvSCALE, font=FS.FONT_16, color=txtColor, text=function() return wgt.values.craft_name end},
+            {type="image", x=0, y=0, w=45*lvSCALE, h=45*lvSCALE, file="/SCRIPTS/RF2-dashboards/img/rf2_logo.png"},
         }
     })
 

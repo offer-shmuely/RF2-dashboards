@@ -269,6 +269,11 @@ local function updateProfiles(wgt)
     local val = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.rate_profile)
     wgt.values.rate_id = val
     wgt.values.rate_id_str = string.format("%s", wgt.values.rate_id)
+
+    -- battery profile
+    local val = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.battery_profile)
+    wgt.values.battery_id = val
+    wgt.values.battery_id_str = string.format("%s", wgt.values.battery_id)
 end
 
 local function updateCell(wgt)
@@ -449,6 +454,8 @@ local function update(wgt, options)
         profile_id_str = "--",
         rate_id = -1,
         rate_id_str = "--",
+        battery_id = -1,
+        battery_id_str = "--",
 
         vbat = -1,
         vcel = -1,
@@ -608,4 +615,4 @@ local function refresh(wgt, event, touchState)
     --    dbgLayout(wgt)
 end
 
-return { create = create, update = update, background = background, refresh = refresh }
+return { create = create, update = update, background = background, foreground = refresh, refresh = refresh }

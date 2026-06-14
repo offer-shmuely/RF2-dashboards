@@ -83,13 +83,13 @@ M.build_ui = function(wgt)
         }
     })
 
-    -- batt profile
-    -- pMain:box({x=86, y=0,
-    --     children={
-    --         {type="label", text="Batt", x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
-    --         {type="label", text=function() return "1" end , x=2, y=10, font=FS.FONT_16 ,color=txtColor},
-    --     }
-    -- }})
+    -- battery profile
+    pMain:box({x=86*lvSCALE, y=0,
+        children={
+            {type="label", text="Batt", x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", text=function() return wgt.values.battery_id_str end , x=2*lvSCALE, y=10*lvSCALE, font=FS.FONT_16 ,color=txtColor},
+        }
+    })
 
     -- voltage
     local bVolt = pMain:box({x=5*lvSCALE, y=45*lvSCALE})

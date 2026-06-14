@@ -103,7 +103,7 @@ sensorTable = {
         isAlert = function()
             local dv = sensorTable.rx_voltage.lastValueMax - sensorTable.rx_voltage.lastValueMin
             if dv > 0.9 then
-                log("rx_voltage.isAlert() called, dv=%s (min: %s, max: %s)", dv, sensorTable.rx_voltage.lastValueMin, sensorTable.rx_voltage.lastValueMax)
+                -- log("rx_voltage.isAlert() called, dv=%s (min: %s, max: %s)", dv, sensorTable.rx_voltage.lastValueMin, sensorTable.rx_voltage.lastValueMax)
                 return true
             end
             -- log("rx_voltage.isAlert() called, v=%s", v)
@@ -231,6 +231,14 @@ sensorTable = {
         },
     },
 
+    battery_profile = {
+        name = "battery_profile",
+        sourceId = "BAT#",
+        sim = {
+            getValue = function() return 1 end,
+        },
+    },
+
     -- Throttle
     throttle_percent = {
         name = "throttle_pct",
@@ -244,6 +252,23 @@ sensorTable = {
             end
         end,
     },
+
+    gov_state = {
+        name = "gov_state",
+        sourceId = "Gov",
+        sim = {
+            getValue = function() return 4 end,
+        },
+    },
+
+    cell_count = {
+        name = "cell_count",
+        sourceId = "Cel#",
+        sim = {
+            getValue = function() return 6 end,
+        },
+    },
+
 
     -- virtual is connected
     is_connected = {

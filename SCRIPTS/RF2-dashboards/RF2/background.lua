@@ -20,8 +20,8 @@ local function run()
             -- This is also a work-around for https://github.com/ExpressLRS/ExpressLRS/issues/3207 (AUX channel bug in ELRS TX < 3.5.5)
             return
         end
-        -- rf2.executeScript("F/pilotConfigReset")()
         if modelIsConnected then
+            -- rf2.executeScript("F/pilotConfigReset")()
             if initTask then
                 initTask.reset()
                 initTask = nil

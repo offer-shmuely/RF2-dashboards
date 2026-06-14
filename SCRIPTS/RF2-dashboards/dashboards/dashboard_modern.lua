@@ -68,7 +68,7 @@ M.build_ui = function(wgt)
     local pMain = lvgl.box({x=0, y=wgt.selfTopbarHeight*lvSCALE})
 
     -- pid profile (bank)
-    pMain:box({x=(30+310)*lvSCALE, y=is800 and 185*lvSCALE or 150,
+    pMain:box({x=(30+350)*lvSCALE, y=is800 and 185*lvSCALE or 150,
         children={
             {type="label", text="Profile", x=0, y=40*lvSCALE, font=FS.FONT_6, color=titleGreyColor},
             {type="label", text=function() return wgt.values.profile_id_str end , x=6*lvSCALE, y=0, font=FS.FONT_16 ,color=txtColor},
@@ -76,7 +76,7 @@ M.build_ui = function(wgt)
     })
 
     -- rate profile
-    pMain:box({x=(74+310)*lvSCALE, y=is800 and 185*lvSCALE or 150,
+    pMain:box({x=(78+350)*lvSCALE, y=is800 and 185*lvSCALE or 150,
         children={
             {type="label", text="Rate", x=0, y=40*lvSCALE, font=FS.FONT_6, color=titleGreyColor},
             {type="label", text=function() return wgt.values.rate_id_str end , x=2*lvSCALE, y=0, font=FS.FONT_16 ,color=txtColor},
@@ -84,12 +84,12 @@ M.build_ui = function(wgt)
     })
 
     -- batt profile
-    -- pMain:box({x=116+310, y=is800 and 180*lvSCALE or 150,
-    --     children={
-    --         {type="label", text="Batt", x=0, y=40, font=FS.FONT_6, color=titleGreyColor},
-    --         {type="label", text=function() return "1" end , x=2, y=0, font=FS.FONT_16 ,color=txtColor},
-    --     }
-    -- })
+    pMain:box({x=(116+350)*lvSCALE, y=is800 and 185*lvSCALE or 150,
+        children={
+            {type="label", text="Batt", x=0, y=40*lvSCALE, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", text=function() return wgt.values.battery_id_str end , x=2*lvSCALE, y=0, font=FS.FONT_16 ,color=txtColor},
+        }
+    })
 
     -- time
     pMain:build({
@@ -180,7 +180,7 @@ M.build_ui = function(wgt)
             {type="rectangle", x=6*lvSCALE, y=isizeh-25*lvSCALE, w=isizew-20, h=20*lvSCALE, filled=true, rounded=8, color=DARKGREY, opacity=200},
             {type="label", text=function() return wgt.values.craft_name end,  x=15*lvSCALE, y=isizeh-25*lvSCALE, font=FS.FONT_8 ,color=txtColor},
             -- flights count
-            {type="label", text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end , x=8*lvSCALE, y=isizeh+10*lvSCALE, font=FS.FONT_8, color=lcd.RGB(0x999999)},
+            {type="label", text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end , x=is800 and 90 or 8*lvSCALE, y=isizeh+10*lvSCALE, font=FS.FONT_8, color=lcd.RGB(0x999999)},
     }})
 
 

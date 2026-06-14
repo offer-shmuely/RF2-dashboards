@@ -45,6 +45,9 @@ M.run = function(wgt, curr_dashboard)
         return 0
     end
     local new_capa = wgt.values.capaPercent
+    if new_capa == 0 then
+        return 0
+    end
     local new_capa_parted = math.ceil(new_capa / 10) * 10
     -- log("audio for capacity: last=%s new=%s", last_capa_perc_parted, new_capa_parted)
     if new_capa_parted < last_capa_perc_parted then
