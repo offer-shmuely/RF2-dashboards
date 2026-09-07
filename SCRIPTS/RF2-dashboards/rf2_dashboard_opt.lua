@@ -11,7 +11,7 @@ local M = {
             "Summary 1",
             "Summary 2",
         }},
-        {"battSensor" , CHOICE, 3 , {
+        {"battSensor" , CHOICE, 1 , {
             "Capacity Sensor",
             "Bat% Sensor (Helpful if using smartfuel)",
         }},
@@ -26,7 +26,7 @@ local M = {
     translate = function(name)
         local translations = {
             showTotalVoltage="Show Voltage as Total",
-            battSensor="Batt% Sensor Type",
+            battSensor="Battery Sensor Type",
             guiStyle="On Flight Dashboard",
             guiStylePost="Post Flight Dashboard",
             currTop="Warning Current",
