@@ -324,7 +324,7 @@ local function updateCapa(wgt)
     if wgt.options.battSensor == 1 then
         wgt.values.capaPercent = (wgt.values.capaTotal > 0) and math.floor(100 * wgt.values.capaRemain // wgt.values.capaTotal) or 0
     else
-        wgt.values.capaPercent = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.batt_percent)
+        wgt.values.capaPercent = (wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.batt_percent) - wgt.options.reserve_capa) // ((100 - wgt.options.reserve_capa)/100)
     end
     local p = wgt.values.capaPercent
     if (p < CAPA_LOW_PERCENT) then
