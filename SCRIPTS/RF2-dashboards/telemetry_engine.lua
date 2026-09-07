@@ -195,6 +195,17 @@ sensorTable = {
         },
     },
 
+    batt_percent = {
+        name = "battery_percent",
+        sourceId = "Bat%", -- Bat%
+        lastValue = NAN_VAL,
+        isWarn  = function() return sensorTable.batt_percent.lastValue < 20 end,
+        isAlert = function() return sensorTable.batt_percent.lastValue < 10 end,
+        sim = {
+            getValue = function() return 100 end,
+        },
+    },
+
     -- governor = {
     --     name = "governor",
     --     sourceId = nil,

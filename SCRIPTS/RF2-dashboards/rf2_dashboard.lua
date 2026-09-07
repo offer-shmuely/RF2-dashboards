@@ -321,7 +321,11 @@ local function updateCapa(wgt)
     end
 
     wgt.values.capaRemain = wgt.values.capaTotal - wgt.values.capaUsed
-    wgt.values.capaPercent = (wgt.values.capaTotal > 0) and math.floor(100 * wgt.values.capaRemain // wgt.values.capaTotal) or 0
+    if wgt.options.battSensor == 1 then
+        wgt.values.capaPercent = (wgt.values.capaTotal > 0) and math.floor(100 * wgt.values.capaRemain // wgt.values.capaTotal) or 0
+    else
+        wgt.values.capaPercent = (wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.batt_percent) - wgt.options.reserve_capa) // ((100 - wgt.options.reserve_capa)/100)
+    end
     local p = wgt.values.capaPercent
     if (p < CAPA_LOW_PERCENT) then
         wgt.values.capaColor = RED
