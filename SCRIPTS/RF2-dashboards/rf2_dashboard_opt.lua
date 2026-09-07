@@ -13,7 +13,7 @@ local M = {
         }},
         {"battSensor" , CHOICE, 1 , {
             "Capacity Sensor",
-            "Capacity Sensor & Bat% Sensor (Helpful if using smartfuel)",
+            "Capa Sensor & Bat% Sensor",  -- helpful when smartfuel is enabled in RF
         }},
         {"enableAudio"     , BOOL  ,   1         }, -- 0=disable audio announcements, 1=enable audio announcements
         {"showTotalVoltage", BOOL  ,   0         }, -- 0=Show as average Lipo cell level, 1=show the total voltage (voltage as is)
