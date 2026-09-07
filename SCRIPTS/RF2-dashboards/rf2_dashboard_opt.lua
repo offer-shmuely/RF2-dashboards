@@ -11,6 +11,10 @@ local M = {
             "Summary 1",
             "Summary 2",
         }},
+        {"battSensor" , CHOICE, 3 , {
+            "Capacity Sensor",
+            "Bat% Sensor (Helpful if using smartfuel)",
+        }},
         {"enableAudio"     , BOOL  ,   1         }, -- 0=disable audio announcements, 1=enable audio announcements
         {"showTotalVoltage", BOOL  ,   0         }, -- 0=Show as average Lipo cell level, 1=show the total voltage (voltage as is)
         {"reserve_capa"    , VALUE ,   0, 0, 40  },
@@ -22,6 +26,7 @@ local M = {
     translate = function(name)
         local translations = {
             showTotalVoltage="Show Voltage as Total",
+            battSensor="Batt% Sensor Type",
             -- enableCapa="Enable Capacity",
             -- useTelemetry="Use Telemetry (faster update)",
             guiStyle="On Flight Dashboard",
