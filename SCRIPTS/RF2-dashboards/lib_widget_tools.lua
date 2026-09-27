@@ -12,9 +12,9 @@ local getTime = getTime
 local lcd = lcd
 
 -- better font size names
-local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 M.FS = FS
-M.FONT_LIST = {FS.FONT_6, FS.FONT_8, FS.FONT_12, FS.FONT_16, FS.FONT_38}
+M.FONT_LIST = {FS.FONT_6, FS.FONT_8, FS.FONT_12, FS.FONT_16, FS.FONT_24, FS.FONT_38}
 local lvSCALE = lvgl.LCD_SCALE or 1
 
 
@@ -260,8 +260,8 @@ function M.isSensorExist(sensorName)
  end
 
 ---------------------------------------------------------------------------------------------------
--- workaround for bug in getFiledInfo()  why?
-function M.cleanInvalidCharFromGetFiledInfo(sourceName)
+-- workaround for bug in getFieldInfo()  why?
+function M.cleanInvalidCharFromGetFieldInfo(sourceName)
 
     if string.byte(string.sub(sourceName, 1, 1)) > 127 then
         sourceName = string.sub(sourceName, 2, -1)
@@ -278,7 +278,7 @@ function M.getSourceNameCleaned(source)
     if (sourceName == nil) then
         return "N/A"
     end
-    local sourceName = M.cleanInvalidCharFromGetFiledInfo(sourceName)
+    local sourceName = M.cleanInvalidCharFromGetFieldInfo(sourceName)
     return sourceName
 end
 
@@ -313,9 +313,12 @@ function M.lcdSizeTextFixed(txt, font_size)
 
     local v_offset = 0
     if font_size == FS.FONT_38 then
-        v_offset = -6*lvSCALE
-        ts_h = 52*lvSCALE
+        v_offset = -4*lvSCALE
+        ts_h = 50*lvSCALE
         ts_w=ts_w-3
+    elseif font_size == FS.FONT_24 then
+        v_offset = -4*lvSCALE
+        ts_h = 38*lvSCALE
     elseif font_size == FS.FONT_16 then
         v_offset = -6*lvSCALE
         ts_h = 28*lvSCALE
@@ -336,17 +339,25 @@ function M.getFontSize(wgt, txt, max_w, max_h, max_font_size)
     local maxFontIndex = M.getFontIndex(max_font_size, nil)
     --log("getFontSize() [%s] %dx%d (maxIndex: %d)", txt, max_w, max_h, maxFontIndex)
 
-    if maxFontIndex>=5 then
+    if maxFontIndex>=6 then
         local w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_38)
         if w <= max_w and h <= max_h then
             log("[%s] FS.FONT_38 %dx%d", txt, w, h)
             return FS.FONT_38, w, h, v_offset
         else
-            log("[%s] FS.FONT_38 %dx%d (too small)", txt, w, h)
+            -- log("[%s] FS.FONT_38 %dx%d (too small)", txt, w, h)
         end
     end
 
     local w, h, v_offset
+    if maxFontIndex>=5 then
+        w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_24)
+        if w <= max_w and h <= max_h then
+            -- log("[%s] FS.FONT_24 %dx%d", txt, w, h)
+            return FS.FONT_24, w, h, v_offset
+        end
+    end
+
     if maxFontIndex>=4 then
         w, h, v_offset = M.lcdSizeTextFixed(txt, FS.FONT_16)
         if w <= max_w and h <= max_h then

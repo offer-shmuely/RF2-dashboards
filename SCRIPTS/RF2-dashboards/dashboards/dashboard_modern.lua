@@ -22,9 +22,11 @@ local statusbar = arg[5]
 local inSimu = arg[6]
 
 -- better font size names
-local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 local lvSCALE = lvgl.LCD_SCALE or 1
 local is800 = (LCD_W==800)
+
+local lvgl2 = { RGB=lcd.RGB }
 
 local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
 
@@ -53,7 +55,7 @@ M.build_ui = function(wgt)
     lvgl.clear()
 
     -- global
-    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
+    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lvgl2.RGB(0x111111), filled=true})
 
     -- top bar
     lvgl.box({x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, visible=function() return wgt.isNeedTopbar end,
@@ -123,9 +125,9 @@ M.build_ui = function(wgt)
 
     -- current
     local g_rad = 50*lvSCALE
-    local g_thick = 8*lvSCALE--11
-    local gm_rad = g_rad-10
-    local gm_thick = 8
+    local g_thick = is800 and 14*lvSCALE or 8 --11 8*lvSCALE--11
+    local gm_rad = g_rad-g_thick -- 10*lvSCALE
+    local gm_thick = g_thick * 0.6
     local g_y = 55*lvSCALE
     local g_angel_min = 140
     local g_angel_max = 400
@@ -137,35 +139,35 @@ M.build_ui = function(wgt)
 
     local bCurr = pMain:box({x=2*lvSCALE, y=g_y,
         children={
-            {type="label", text="Current",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", text="Current",  x=25*lvSCALE, y=85*lvSCALE, font=FS.FONT_6, color=titleGreyColor},
             {type="label", x=35*lvSCALE, y=40*lvSCALE, text=function() return string.format("%dA", wgt.values.curr) end, font=FS.FONT_8, color=txtColor},
             {type="label", x=30*lvSCALE, y=65*lvSCALE, text=function() return string.format("+%dA", wgt.values.curr_max) end, font=FS.FONT_8, color=txtColor},
-            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, rounded=true, color=lcd.RGB(0x444444)},
-            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=gm_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_max_percent) end, color=lcd.RGB(0xFF623F), opacity=180},
-            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad , thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_percent)     end, color=lcd.RGB(0xFF623F)},
+            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, rounded=true, color=lvgl2.RGB(0x444444)},
+            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_max_percent) end, color=lvgl2.RGB(0xFF623F), opacity=180},
+            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad , thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.curr_percent)     end, color=lvgl2.RGB(0xFF623F)},
         }
     })
     -- thr
     pMain:box({x=2+2*g_rad+10*lvSCALE, y=g_y,
         children={
-            {type="label", text="Thr",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", text="Thr",  x=35*lvSCALE, y=85*lvSCALE, font=FS.FONT_6, color=titleGreyColor},
             {type="label", x=35*lvSCALE, y=40*lvSCALE, text=function() return string.format("%s%%", wgt.values.thr)      end, font=FS.FONT_8, color=txtColor},
             {type="label", x=35*lvSCALE, y=65*lvSCALE, text=function() return string.format("+%s%%", wgt.values.thr_max) end, font=FS.FONT_8, color=txtColor},
-            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, color=lcd.RGB(0x444444)},
-            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.thr_max) end, color=lcd.RGB(0xFFA72C), opacity=80},
-            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.thr)     end, color=lcd.RGB(0xFFA72C)},
+            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, color=lvgl2.RGB(0x444444)},
+            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.thr_max) end, color=lvgl2.RGB(0xFFA72C), opacity=80},
+            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.thr)     end, color=lvgl2.RGB(0xFFA72C)},
         }
     })
 
     -- Temperature
     pMain:box({x=2+4*g_rad+20*lvSCALE, y=g_y,
         children={
-            {type="label", text="temp",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
+            {type="label", text="temp",  x=35*lvSCALE, y=85*lvSCALE, font=FS.FONT_6, color=titleGreyColor},
             {type="label", x=35*lvSCALE, y=40*lvSCALE, text=function() return string.format("%d°c", wgt.values.EscT or "--°c") end, font=FS.FONT_8, color=txtColor},
             {type="label", x=35*lvSCALE, y=65*lvSCALE, text=function() return string.format("+%d°c", wgt.values.EscT_max or "--°c") end, font=FS.FONT_8, color=txtColor},
-            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, color=lcd.RGB(0x444444)},
-            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=gm_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_max_percent) end, color=lcd.RGB(0x1F96C2), opacity=180},
-            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad,  thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_percent)     end, color=lcd.RGB(0x1F96C2)},
+            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, color=lvgl2.RGB(0x444444)},
+            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=gm_rad, thickness=gm_thick, startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_max_percent) end, color=lvgl2.RGB(0x1F96C2), opacity=180},
+            {type="arc",   x=50*lvSCALE, y=50*lvSCALE, radius=g_rad,  thickness=g_thick,  startAngle=g_angel_min, endAngle=function() return calEndAngle(wgt.values.EscT_percent)     end, color=lvgl2.RGB(0x1F96C2)},
         }
     })
 
@@ -180,7 +182,7 @@ M.build_ui = function(wgt)
             {type="rectangle", x=6*lvSCALE, y=isizeh-25*lvSCALE, w=isizew-20, h=20*lvSCALE, filled=true, rounded=8, color=DARKGREY, opacity=200},
             {type="label", text=function() return wgt.values.craft_name end,  x=15*lvSCALE, y=isizeh-25*lvSCALE, font=FS.FONT_8 ,color=txtColor},
             -- flights count
-            {type="label", text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end , x=is800 and 90 or 8*lvSCALE, y=isizeh+10*lvSCALE, font=FS.FONT_8, color=lcd.RGB(0x999999)},
+            {type="label", text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end , x=is800 and 90 or 8*lvSCALE, y=isizeh+10*lvSCALE, font=FS.FONT_8, color=lvgl2.RGB(0x999999)},
     }})
 
 
@@ -212,14 +214,14 @@ M.build_ui = function(wgt)
     -- app_ver
     pMain:box({x=LCD_W -50*lvSCALE, y=LCD_H -82*lvSCALE,
         children={
-            {type="label", text=function() return string.format("v%s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
+            {type="label", text=function() return string.format("v%s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lvgl2.RGB(0x999999)},
         }
     })
 
     -- status bar
     wgt.statusbar.init(wgt, "VenbS & Shmuely", {
         {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.link_rqly  },
-        {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.v_rx,        wgt.values.v_rx_min     ) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.rx_voltage },
+        {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.vbec,        wgt.values.vbec_min     ) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.vbec },
         {name="Curr+:", ftxt=function() return string.format("A: %d/%dA",           wgt.values.curr,        wgt.values.curr_max     ) end, sensor=wgt.tlmEngine.sensorTable.current},
         {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",         wgt.values.link_tx_power_max                    ) end, sensor=wgt.tlmEngine.sensorTable.link_tx_power},
         {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end, sensor=wgt.tlmEngine.sensorTable.throttle_percent},

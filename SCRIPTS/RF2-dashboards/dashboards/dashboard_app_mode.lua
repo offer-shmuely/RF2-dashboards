@@ -22,7 +22,7 @@ local statusbar = arg[5]
 local inSimu = arg[6]
 
 -- better font size names
-local FS = {FONT_38=XXLSIZE, FONT_16=DBLSIZE, FONT_12=MIDSIZE, FONT_8=0, FONT_6=SMLSIZE}
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 local lvSCALE = lvgl.LCD_SCALE or 1
 
 -- sensor list: built dynamically from wgt.tlmEngine.sensorTable at build_ui time
@@ -282,7 +282,7 @@ local function showStatusPopup(sensorState)
 
     local statusText = ""
     if sensorState.defined_in_rf == false then
-        statusText = statusText .. "\n" .. " sensor []"..sensorName.."] need to be defined in rotorflight"
+        statusText = statusText .. "\n" .. " sensor ["..sensorName.."] need to be defined in rotorflight"
     end
 
     if sensorState.exist_in_etx == false then

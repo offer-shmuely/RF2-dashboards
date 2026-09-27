@@ -14,11 +14,11 @@
 ---- #########################################################################
 
 local app_name = "RF2-dashboards"
-local app_ver = "2.2.20"
+local app_ver = "2.2.21"
 
 local baseDir = "/SCRIPTS/RF2-dashboards"
 local inSimu = string.sub(select(2, getVersion()), -4) == "simu"
-
+local lvgl2 = { RGB=lcd.RGB }
 local timerNumber = 1
 
 -- constants
@@ -35,6 +35,8 @@ local dashboard_styles = {
     [1] = "dashboard_fancy.lua",
     [2] = "dashboard_modern.lua",
     [3] = "dashboard_nitro.lua",
+    [4] = "dashboard_post_1.lua",
+    [5] = "dashboard_post_2.lua",
 }
 local default_dashboard_style = dashboard_styles[1]
 local dashboard_file_name = default_dashboard_style
@@ -293,7 +295,7 @@ local function updateCell(wgt)
     wgt.values.vcel_min     = vcel_min
     wgt.values.cell_percent = batPercent
     wgt.values.volt         = (wgt.options.showTotalVoltage == 1) and vbat or vcel
-    wgt.values.cellColor    = (vcel < VCEL_LOW_THRESHOLD) and RED or lcd.RGB(0x00963A) --GREEN
+    wgt.values.cellColor    = (vcel < VCEL_LOW_THRESHOLD) and RED or lvgl2.RGB(0x00963A) --GREEN
 end
 
 local function updateCurr(wgt)
@@ -328,19 +330,18 @@ local function updateCapa(wgt)
     elseif (p < CAPA_MEDIUM_PERCENT) then
         wgt.values.capaColor = ORANGE
     else
-        wgt.values.capaColor = lcd.RGB(0x00963A) --GREEN
+        wgt.values.capaColor = lvgl2.RGB(0x00963A) --GREEN
     end
 end
 
-local function updateRxVoltage(wgt)
-    wgt.values.v_rx     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.rx_voltage)
-    wgt.values.v_rx_min = wgt.tlmEngine.valueMin(wgt.tlmEngine.sensorTable.rx_voltage)
+local function updateBecVoltage(wgt)
+    wgt.values.vbec     = wgt.tlmEngine.value(wgt.tlmEngine.sensorTable.vbec)
+    wgt.values.vbec_min = wgt.tlmEngine.valueMin(wgt.tlmEngine.sensorTable.vbec)
 
-
-    wgt.values.v_rx_cell_count = wgt.tools.calcCellCount(wgt.values.v_rx)
-    local vcel = wgt.values.v_rx_cell_count > 0 and (wgt.values.v_rx / wgt.values.v_rx_cell_count) or 0
-    wgt.values.v_rx_percent = wgt.tools.getCellPercent(vcel)
-    -- log("updateRxVoltage:  v_rx: %s, v_rx_min: %s, %s%% (cell:%s)", wgt.values.v_rx, wgt.values.v_rx_min, wgt.values.v_rx_percent, wgt.values.v_rx_cell_count)
+    wgt.values.vbec_cell_count = wgt.tools.calcCellCount(wgt.values.vbec)
+    local vcel = wgt.values.vbec_cell_count > 0 and (wgt.values.vbec / wgt.values.vbec_cell_count) or 0
+    wgt.values.vbec_percent = wgt.tools.getCellPercent(vcel)
+    -- log("updateRxVoltage:  vbec: %s, vbec_min: %s, %s%% (cell:%s)", wgt.values.vbec, wgt.values.vbec_min, wgt.values.vbec_percent, wgt.values.vbec_cell_count)
 end
 
 local function updateModelStats(wgt)
@@ -462,10 +463,10 @@ local function update(wgt, options)
         vcel_min = -1,
         cell_percent = -1,
         volt = -1,
-        v_rx = -1,
-        v_rx_min = -1,
-        v_rx_percent = -1,
-        -- v_rx_min_percent = -1,
+        vbec = -1,
+        vbec_min = -1,
+        vbec_percent = -1,
+        -- vbec_min_percent = -1,
         curr = 0,
         curr_max = 0,
         curr_percent = 0,
@@ -525,8 +526,9 @@ local function update(wgt, options)
     wgt.is_connected = false
     updateOnNoConnection(wgt)
 
-    wgt.tools     = assert(loadScript(baseDir .. "/lib_widget_tools.lua", "btd"))(m_log, app_name)
-    wgt.statusbar = assert(loadScript(baseDir .. "/parts/statusbar.lua", "btd"))(m_log.info, app_name, wgt.tools)
+    wgt.tools      = assert(loadScript(baseDir .. "/lib_widget_tools.lua", "btd"))(m_log, app_name)
+    wgt.statusbar  = assert(loadScript(baseDir .. "/parts/statusbar.lua", "btd"))(m_log.info, app_name, wgt.tools)
+    wgt.statusarea = assert(loadScript(baseDir .. "/parts/statusarea.lua", "btd"))(m_log.info, app_name, wgt.tools)
     wgt.tlmEngine = assert(loadScript(baseDir .. "/telemetry_engine.lua", "btd"))(m_log.info, app_name, inSimu)
     log("x-telemetery tlmTask: %s", wgt.tlmEngine)
     wgt.tlmEngine.init(wgt)
@@ -579,7 +581,7 @@ local function background(wgt)
     updateCell(wgt)
     updateCurr(wgt)
     updateCapa(wgt)
-    updateRxVoltage(wgt)
+    updateBecVoltage(wgt)
     updateThr(wgt)
     updateTemperature(wgt)
     updateImage(wgt)
@@ -615,4 +617,4 @@ local function refresh(wgt, event, touchState)
     --    dbgLayout(wgt)
 end
 
-return { create = create, update = update, background = background, foreground = refresh, refresh = refresh }
+return { create=create, update=update, refresh=refresh, background=background }

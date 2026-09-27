@@ -106,6 +106,9 @@ local function initialize(modelIsConnected)
     end
 
     if not modelIsConnected then
+        --if pilotConfigHasBeenSet() then
+        --    rf2.executeScript("F/pilotConfigReset")()
+        --end
         --resetModelName()
         return false
     end

@@ -1,7 +1,6 @@
 local app_name = "rf2_dashboard"
 local widg_dir = "/SCRIPTS/RF2-dashboards/"
 chdir(widg_dir)
-local tool = nil
 
 local ver, radio, maj, minor, rev, osname = getVersion()
 local nVer = maj*1000000 + minor*1000 + rev
@@ -20,24 +19,28 @@ else
 end
 
 local function create(zone, options)
+    local tool = nil
     if is_valid_ver==true then
         tool = assert(loadScript(widg_dir..app_name .. ".lua", "btd"))()
     else
         tool = {
             create = function(zone, options) return {zone=zone,options=options} end,
             update = function(wgt, options)  return wgt end,
-            refresh = function(wgt) 
+            refresh = function(wgt)
                 lcd.drawText(10, 10, app_name.."\nRequires EdgeTX 2.11.3 or higher\nPlease upgrade your Radio", RED)
-                -- return 0 
+                -- return 0
             end,
             background = function(wgt) return end
         }
     end
 
-    return tool.create(zone, options)
+    local wgt = tool.create(zone, options)
+    wgt._tool = tool
+    return wgt
 end
-local function update(wgt, options) return tool.update(wgt, options) end
-local function refresh(wgt)         return tool.refresh(wgt) end
-local function background(wgt)      return tool.background(wgt) end
+
+local function update(wgt, options) return wgt._tool.update(wgt, options) end
+local function background(wgt)      return wgt._tool.background(wgt)      end
+local function refresh(wgt)         return wgt._tool.refresh(wgt)         end
 
 return {name=app_name, options=tool_opt.options, translate=tool_opt.translate, create=create, update=update, refresh=refresh, background=background, useLvgl=is_valid_ver}

@@ -1,13 +1,14 @@
 local M = {}
 
 -- better font size names
-local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 
 local lvSCALE = lvgl.LCD_SCALE or 1
 local is800 = (LCD_W==800)
 local g_angel_min = 140
 local g_angel_max = 400
 
+local lvgl2 = { RGB=lcd.RGB }
 
 local function calEndAngle(f_percent)
     local percent = f_percent()
@@ -21,14 +22,14 @@ local function calcColor(wgt, f_percent, sensor)
         return GREY
     end
     if wgt.tlmEngine.isAlert(sensor) then
-        return lcd.RGB(0xFF0000)
+        return lvgl2.RGB(0xFF0000)
     end
     if wgt.tlmEngine.isWarn(sensor) then
-        return lcd.RGB(0xFF8000)
+        return lvgl2.RGB(0xFF8000)
     end
 
     -- everything is good
-    return lcd.RGB(0x00FF00)
+    return lvgl2.RGB(0x00FF00)
 end
 
 M.build_ui = function(parentBox, wgt, line, col, a_color, a_txt,
@@ -41,7 +42,7 @@ M.build_ui = function(parentBox, wgt, line, col, a_color, a_txt,
     local txtColor = wgt.options.textColor
 
     local g_rad = is800 and 70 or 30
-    local g_thick = is800 and 14 or 8 --11
+    local g_thick = is800 and 12*lvSCALE or 8 --11
     local gm_rad = g_rad-10
     local gm_thick = 8
     local g_y1 = 5*lvSCALE
@@ -58,7 +59,7 @@ M.build_ui = function(parentBox, wgt, line, col, a_color, a_txt,
             {type="label", text=a_txt,  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
             {type="arc", x=g_rad, y=g_rad+20*lvSCALE,
                 radius=g_rad, thickness=g_thick, startAngle=g_angel_min, endAngle=g_angel_max, rounded=true,
-                color=lcd.RGB(0x444444)},
+                color=lvgl2.RGB(0x444444)},
             {type="arc", x=g_rad, y=g_rad+20*lvSCALE,
                 radius=g_rad, thickness=g_thick, startAngle=g_angel_min,
                 endAngle=function() return calEndAngle(f_percent) end,

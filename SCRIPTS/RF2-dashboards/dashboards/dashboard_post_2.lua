@@ -22,9 +22,11 @@ local statusbar = arg[5]
 local inSimu = arg[6]
 
 -- better font size names
-local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 local lvSCALE = lvgl.LCD_SCALE or 1
 local is800 = (LCD_W==800)
+
+local lvgl2 = { RGB=lcd.RGB }
 
 local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
 local lib_post_bar = assert(loadScript(baseDir .. "/parts/post_bar.lua", "btd"))()
@@ -44,7 +46,7 @@ M.build_ui = function(wgt)
     lvgl.clear()
 
     -- global
-    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
+    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lvgl2.RGB(0x111111), filled=true})
 
     -- top bar
     lvgl.box({x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, visible=function() return wgt.isNeedTopbar end,
@@ -87,12 +89,12 @@ M.build_ui = function(wgt)
     --         x=40, y=70,
     --         h=2,
     --         w=LCD_W - 2*70,
-    --         color=lcd.RGB(0x444444)
+    --         color=lvgl2.RGB(0x444444)
     --     }
     -- })
 
     -- capacity
-    lib_post_bar.build_ui(pMain, wgt, 1,1, lcd.RGB(0xFF623F), "Capacity",
+    lib_post_bar.build_ui(pMain, wgt, 1,1, lvgl2.RGB(0xFF623F), "Capacity",
         -- function() return string.format("%dmah", wgt.values.capaRemain or 0) end,
         -- function() return string.format("%d%% (used: %dmah)", wgt.values.capaPercent, wgt.values.capaUsed or 0) end,
         function() return string.format("%dmah", wgt.values.capaUsed or 0) end,
@@ -102,7 +104,7 @@ M.build_ui = function(wgt)
     )
 
     -- current
-    lib_post_bar.build_ui(pMain, wgt, 1,2, lcd.RGB(0xFF623F), "Current",
+    lib_post_bar.build_ui(pMain, wgt, 1,2, lvgl2.RGB(0xFF623F), "Current",
         function() return string.format("+%dA", wgt.values.curr_max)  or "--A"end,
         function() return wgt.values.curr_max_percent end,
         nil,
@@ -110,7 +112,7 @@ M.build_ui = function(wgt)
     )
 
     -- temp
-    lib_post_bar.build_ui(pMain, wgt, 1,3, lcd.RGB(0x1F96C2), "Esc Temp",
+    lib_post_bar.build_ui(pMain, wgt, 1,3, lvgl2.RGB(0x1F96C2), "Esc Temp",
         function() return string.format("+%d°c", wgt.values.EscT_max or "--°c") end,
         function() return wgt.values.EscT_max_percent end,
         "temperature.png",
@@ -118,7 +120,7 @@ M.build_ui = function(wgt)
     )
 
     -- Battery
-    lib_post_bar.build_ui(pMain, wgt, 1, 4, lcd.RGB(0xFF623F), "Battery",
+    lib_post_bar.build_ui(pMain, wgt, 1, 4, lvgl2.RGB(0xFF623F), "Battery",
         function() return string.format("%.02fv",  wgt.values.volt) end,
         function() return wgt.values.cell_percent end,
         nil,
@@ -126,11 +128,11 @@ M.build_ui = function(wgt)
     )
 
     -- RxVoltage
-    lib_post_bar.build_ui(pMain, wgt, 1,5, lcd.RGB(0xFF623F), "Rx Volt",
-        function() return string.format("%.02fv", wgt.values.v_rx_min) end,
-        function() return wgt.tlmEngine.sensorTable.rx_voltage.fPercent(wgt.values.v_rx_min) end,
+    lib_post_bar.build_ui(pMain, wgt, 1,5, lvgl2.RGB(0xFF623F), "Rx Volt",
+        function() return string.format("%.02fv", wgt.values.vbec_min) end,
+        function() return wgt.tlmEngine.sensorTable.vbec.fPercent(wgt.values.vbec_min) end,
         nil,
-        wgt.tlmEngine.sensorTable.rx_voltage
+        wgt.tlmEngine.sensorTable.vbec
     )
 
     -------------------------------------------------------------------------------------------
@@ -140,14 +142,14 @@ M.build_ui = function(wgt)
             x=LCD_W/2, y=70,
             h=LCD_H - wgt.selfTopbarHeight -70 -15 -wgt.statusbar.height(),
             w=2,
-            color=lcd.RGB(0x444444)
+            color=lvgl2.RGB(0x444444)
         }
     })
 
     -------------------------------------------------------------------------------------------
 
     -- rqly
-    lib_post_bar.build_ui(pMain, wgt, 2,1, lcd.RGB(0xFF623F), "RQly",
+    lib_post_bar.build_ui(pMain, wgt, 2,1, lvgl2.RGB(0xFF623F), "RQly",
         function() return string.format("%s%%", wgt.values.link_rqly_min) end,
         function() return wgt.values.link_rqly_min end,
         nil,
@@ -155,7 +157,7 @@ M.build_ui = function(wgt)
     )
 
     -- thr
-    lib_post_bar.build_ui(pMain, wgt, 2,2, lcd.RGB(0xFFA72C), "Thr",
+    lib_post_bar.build_ui(pMain, wgt, 2,2, lvgl2.RGB(0xFFA72C), "Thr",
         function() return string.format("%s%%", wgt.values.thr_max) end,
         function() return wgt.values.thr_max end,
         nil,
@@ -163,14 +165,14 @@ M.build_ui = function(wgt)
     )
 
     -- headspeed
-    lib_post_bar.build_ui(pMain, wgt, 2,3, lcd.RGB(0xFFA72C), "Headspeed",
+    lib_post_bar.build_ui(pMain, wgt, 2,3, lvgl2.RGB(0xFFA72C), "Headspeed",
         function() return string.format("%srpm", wgt.values.rpm_max) end,
         function() return 100 end, -- we show the max, so hardcoded 100%
         nil,
         wgt.tlmEngine.sensorTable.rpm
     )
 
-    -- lib_post_bar.build_ui(pMain, wgt, 2,4, lcd.RGB(0xFFA72C), "RPM",
+    -- lib_post_bar.build_ui(pMain, wgt, 2,4, lvgl2.RGB(0xFFA72C), "RPM",
     --     "111",--function() return string.format("%s%%", wgt.values.rpm_max) end,
     --     "222",--function() return wgt.values.rpm_max end,
     --     nil,

@@ -22,9 +22,11 @@ local statusbar = arg[5]
 local inSimu = arg[6]
 
 -- better font size names
-local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 local lvSCALE = lvgl.LCD_SCALE or 1
 local is800 = (LCD_W==800)
+
+local lvgl2 = { RGB=lcd.RGB }
 
 local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
 
@@ -53,7 +55,7 @@ M.build_ui = function(wgt)
     lvgl.clear()
 
     -- global
-    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
+    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lvgl2.RGB(0x111111), filled=true})
 
     -- top bar
     lvgl.box({x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, visible=function() return wgt.isNeedTopbar end,
@@ -92,7 +94,7 @@ M.build_ui = function(wgt)
     })
 
     -- voltage
-    local bVolt = pMain:box({x=5*lvSCALE, y=45*lvSCALE})
+    local bVolt = pMain:box({x=5*lvSCALE, y=is800 and 135 or 60})
     bVolt:label({text="Battery", x=0, y=0, font=FS.FONT_6, color=titleGreyColor})
     bVolt:label({text=function() return string.format("%.02fv", wgt.values.volt) end , x=0, y=12*lvSCALE, font=FS.FONT_16 ,color=txtColor})
     lib_blackbox_horz.build_ui(bVolt, wgt,
@@ -102,7 +104,7 @@ M.build_ui = function(wgt)
     )
 
     -- capacity
-    local bCapa = pMain:box({x=5*lvSCALE, y=is800 and 250 or 145})
+    local bCapa = pMain:box({x=5*lvSCALE, y=is800 and 240 or 145})
     bCapa:label({text=function() return string.format("Capacity (Total: %s)", wgt.values.capaTotal) end,  x=0, y=0, font=FS.FONT_6, color=titleGreyColor})
     lib_blackbox_horz.build_ui(bCapa, wgt,
         {x=0, y=17*lvSCALE,w=300*lvSCALE,h=40*lvSCALE,segments_w=20, color=WHITE, bg_color=GREY, cath_w=10, cath_h=30, segments_h=20, cath=false},
@@ -153,14 +155,14 @@ M.build_ui = function(wgt)
             {type="rectangle", x=6*lvSCALE, y=isizeh-25*lvSCALE, w=isizew-20, h=20*lvSCALE, filled=true, rounded=8*lvSCALE, color=DARKGREY, opacity=200},
             {type="label", text=function() return wgt.values.craft_name end,  x=15*lvSCALE, y=isizeh-25*lvSCALE, font=FS.FONT_8 ,color=txtColor},
             -- flights count
-            {type="label", x=8*lvSCALE, y=isizeh+10*lvSCALE, font=FS.FONT_8, color=lcd.RGB(0x999999),
+            {type="label", x=15*lvSCALE, y=isizeh+1*lvSCALE, font=FS.FONT_12, color=lvgl2.RGB(0x999999),
                 text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end,
             },
         }
     })
 
     -- current
-    pMain:box({x=340*lvSCALE, y=isizeh+40*lvSCALE,
+    pMain:box({x=380*lvSCALE, y=is800 and 180*lvSCALE or 150*lvSCALE,
         -- pos=function() return wgt.dbgx*lvSCALE, wgt.dbgy*lvSCALE end,
         children={
             {type="label", text="Current",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
@@ -193,27 +195,62 @@ M.build_ui = function(wgt)
         }
     })
 
-    -- app_ver
-    pMain:box({x=LCD_W -46*lvSCALE, y=LCD_H -82*lvSCALE,
+    -- dev name, top-right corner of the screen
+    local row_gap = 4*lvSCALE
+    pMain:label({
+        pos=function()
+            local dev_w = tools.lcdSizeTextFixed("Shmuely", FS.FONT_6)
+            return wgt.zone.w - dev_w - row_gap, row_gap
+        end,
+        text="Shmuely",
+        font=FS.FONT_6,
+        color=YELLOW,
+    })
+
+    -- app_ver, top-right corner, below the dev name shown by statusarea
+    pMain:box({x=LCD_W -46*lvSCALE, y=18*lvSCALE,
         children={
-            {type="label", text=function() return string.format("v%s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
+            {type="label", text=function() return string.format("v%s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lvgl2.RGB(0x999999)},
         }
     })
 
-    -- status bar
-    wgt.statusbar.init(wgt, "Shmuely", {
-        {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.link_rqly  },
-        {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.v_rx,        wgt.values.v_rx_min     ) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.rx_voltage },
-        {name="Curr+:", ftxt=function() return string.format("A: %d/%dA",           wgt.values.curr,        wgt.values.curr_max     ) end, sensor=wgt.tlmEngine.sensorTable.current},
-        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",         wgt.values.link_tx_power_max                    ) end, sensor=wgt.tlmEngine.sensorTable.link_tx_power},
-        {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end, sensor=wgt.tlmEngine.sensorTable.throttle_percent},
-    })
-    wgt.statusbar.build_ui(pMain, wgt)
+    -- if is800 then
+    if  (LCD_H>272) then
+        -- status area
+        wgt.statusarea.init(wgt, "Shmuely", {
+            {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.link_rqly, icon="link_quality.png"  },
+            {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.vbec,        wgt.values.vbec_min     ) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.vbec, icon="vbec.png" },
+            {name="Curr+:", ftxt=function() return string.format("A: %d/%dA",           wgt.values.curr,        wgt.values.curr_max     ) end, sensor=wgt.tlmEngine.sensorTable.current, icon="current.png"},
+            {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",         wgt.values.link_tx_power_max                    ) end, sensor=wgt.tlmEngine.sensorTable.link_tx_power, icon="tx_power.png"},
+            {name="Tesc+:", ftxt=function() return string.format("Tesc+: %sC",          wgt.values.EscT_max                             ) end, sensor=wgt.tlmEngine.sensorTable.temp_esc, icon="temperature.png"},
+            {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end, sensor=wgt.tlmEngine.sensorTable.throttle_percent, icon="motor.png"},
+            {name="Thr+:",  ftxt=function() return string.format("vCell-: %.02fv",      wgt.values.vcel_min                             ) end, sensor=wgt.tlmEngine.sensorTable.batt_voltage, icon="cell_voltage.png"},
+            -- {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end, sensor=wgt.tlmEngine.sensorTable.throttle_percent},
+        })
+        wgt.statusarea.build_ui(pMain, wgt)
+    else
+        -- status bar
+        wgt.statusbar.init(wgt, "Shmuely", {
+            {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.link_rqly  },
+            {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV",  wgt.values.vbec,        wgt.values.vbec_min     ) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.vbec },
+            {name="Curr+:", ftxt=function() return string.format("A: %d/%dA",           wgt.values.curr,        wgt.values.curr_max     ) end, sensor=wgt.tlmEngine.sensorTable.current},
+            {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",         wgt.values.link_tx_power_max                    ) end, sensor=wgt.tlmEngine.sensorTable.link_tx_power},
+            {name="Tesc+:", ftxt=function() return string.format("Tesc+: %sC",          wgt.values.EscT_max                             ) end, sensor=wgt.tlmEngine.sensorTable.temp_esc},
+            {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end, sensor=wgt.tlmEngine.sensorTable.throttle_percent},
+        })
+        wgt.statusbar.build_ui(pMain, wgt)
+
+    end
 
 end
 
 M.refresh = function(wgt, event, touchState)
-    wgt.statusbar.refresh()
+    -- if is800 then
+    if  (LCD_H>272) then
+        wgt.statusarea.refresh()
+    else
+        wgt.statusbar.refresh()
+    end
 end
 
 return M

@@ -1,6 +1,13 @@
 local app_name = "rf2_server"
 local baseDir = "/SCRIPTS/RF2-dashboards"
 
+-- better font size names
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local lvSCALE = lvgl.LCD_SCALE or 1
+local is800 = (LCD_W==800)
+
+local lvgl2 = { RGB=lcd.RGB }
+
 rf2fc = {
     msp = {
         ctl = {
@@ -52,8 +59,6 @@ loadScript(baseDir.."/RF2/rf2.lua", "btd")()
 rf2.enable_serial_debug = true
 
 
-local image_file = baseDir.."/img/rf2_logo3.png"
-
 --------------------------------------------------------------
 local function log(fmt, ...)
     rf2.log(fmt, ...)
@@ -65,7 +70,7 @@ log("-------------------------------------")
 log("--- starting %s", app_name)
 
 -- better font size names
-local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 
 -- state machine
 local STATE = {
@@ -99,15 +104,70 @@ end
 
 -----------------------------------------------------------------------------------------------------------------
 
+local function build_ui(wgt)
+    if (wgt == nil) then log("refresh(nil)") return end
+    if (wgt.options == nil) then log("refresh(wgt.options=nil)") return end
+
+    lvgl.clear()
+    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=function() return (rf2fc.msp.ctl.connected==true) and DARKGREEN or GREY end, filled=true})
+
+    lvgl.image({x=0, y=0, w=wgt.zone.w, h=wgt.zone.h-5, fill=false,
+        file=baseDir.."/img/rf2_logo.png"
+        -- file=function() return (rf2fc.msp.ctl.connected==true) and baseDir.."/img/rf2_logo.png" or baseDir.."/img/rf2_logo2.png" end
+    })
+
+    -- lvgl.circle({x=63*lvSCALE, y=10*lvSCALE, radius=5, filled=true, color=function() return (rf2fc.msp.ctl.connected == true) and GREEN or GREY end})
+    lvgl.circle({x=8*lvSCALE, y=8*lvSCALE, radius=5*lvSCALE, filled=true, color=function() return (rf2fc.msp.ctl.msp_rx_request) and GREEN or GREY end})
+
+end
+
+
+local function build_ui_dbg(wgt)
+    if (wgt == nil) then log("refresh(nil)") return end
+    if (wgt.options == nil) then log("refresh(wgt.options=nil)") return end
+
+    local txt = [[
+RF2 Server
+rules of the house:
+* only one server widget allowed
+* disable original "RF Tool" lua widget (on topbar)
+* disable original rf2bg lua script (on special-functions)
+* disable original rf2tlm lua script (on custom-scripts)
+* put the server widget on topbar
+]]
+
+    lvgl.clear()
+    -- lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=GREY, filled=true})
+
+    local y = 5
+
+    lvgl.label({x=20*lvSCALE, y=y*lvSCALE, text=txt})
+    y = y + 150
+
+    lvgl.label({x=10*lvSCALE, y=y*lvSCALE, text=function() return string.format("state: %s", state) end})
+    lvgl.label({x=100*lvSCALE, y=y*lvSCALE, color=ORANGE, text=" (on air, no MSP calls)", visible=function() return state == STATE.ON_AIR end})
+    y = y + 20
+
+    lvgl.label({x=10*lvSCALE, y=y*lvSCALE, text=function() return (rf2fc.msp.ctl.connected == true) and "Connected" or "Waiting for connection" end})
+
+    lvgl.circle({x=63*lvSCALE, y=25*lvSCALE, radius=5, filled=true, color=function() return (rf2fc.msp.ctl.msp_rx_request) and GREEN or GREY end})
+
+end
+
 local function update(wgt, options)
     log("update")
     if (wgt == nil) then return end
     wgt.options = options
 
-    local img = bitmap.open(image_file)
-    wgt.img = bitmap.resize(img, wgt.zone.w, wgt.zone.h)
-
     log("update options: %s", tableToString(options))
+
+    local isOnTop = wgt.zone.h < 60 and wgt.zone.w < 120
+    if isOnTop then
+        build_ui(wgt)
+    else
+        build_ui_dbg(wgt)
+    end
+
     return wgt
 end
 
@@ -338,6 +398,8 @@ local function state_ON_AIR(wgt)
 end
 
 local function background(wgt)
+    if (wgt == nil) then return end
+
     rf2fc.msp.ctl.lastServerTime = rf2.clock()
 
     if state == STATE.ON_AIR then
@@ -398,65 +460,7 @@ local function background(wgt)
 end
 
 local function refresh(wgt)
-    if (wgt == nil) then return end
     background(wgt)
-
-    local bg_color = lcd.RGB(0x11, 0x11, 0x11)
-    local txt_color = BLACK
-    bg_color = GREY
-    if rf2fc.msp.ctl.connected == true then
-        bg_color = GREEN
-        txt_color = BLACK
-    end
-
-    if rf2fc.msp.cache.armed == true then
-        bg_color = ORANGE
-    end
-
-    local isOnTop = wgt.zone.h < 60 and wgt.zone.w < 120
-    -- lcd.drawFilledRectangle(0, 0, LCD_W, LCD_H, bg_color)
-    if isOnTop then
-        lcd.drawFilledRectangle(0, 0, LCD_W, LCD_H, BLACK)
-    end
-
-    lcd.drawFilledCircle(63, 10, 5, bg_color)
-    -- lcd.drawFilledRectangle(0, 0, wgt.zone.w, 60, bg_color)
-    local y = 5
-
-    -- rx/tx status
-    lcd.drawFilledCircle(63, 25, 5, (rf2fc.msp.ctl.msp_rx_request) and GREEN or GREY)
-
-    -- dbg
-    lcd.drawText(wgt.zone.w - 20, 0, string.format("s:%s", state), FS.FONT_6 + GREY)
-
-    if isOnTop then
-        lcd.drawBitmap(wgt.img, 0, 0)
-        local color1 = rf2fc.msp.ctl.connected and lcd.RGB(0x26C4FF) or GREY
-        local color2 = rf2fc.msp.ctl.connected and ORANGE or GREY
-        -- lcd.drawText(4 , -4, "RF", FS.FONT_16 + color1)
-        -- lcd.drawText(37,  3,  "2", FS.FONT_16 + color1)
-    else
-        local txt = [[
-RF2 Server
-rules of the house:
-* only one server widget allowed
-* disable original rf2bg lua script on Special-Functions
-* disable original rf2tlm lua script on custom-scripts
-* put the server widget on topbar
-]]
-
-        lcd.drawText(20, y, txt, FS.FONT_8)
-        y = y + 150
-
-        lcd.drawText(10, y, string.format("state: %s", state), FS.FONT_6)
-        if (state == STATE.ON_AIR) then
-            lcd.drawText(100, y, " (on air, no MSP calls)", FS.FONT_6 + ORANGE)
-        end
-        y = y + 20
-
-        lcd.drawText(10, y, (rf2fc.msp.ctl.connected == true) and "Connected" or "Waiting for connection", FS.FONT_6)
-    end
-
 end
 
 return {name=app_name, create=create, update=update, refresh=refresh, background=background}

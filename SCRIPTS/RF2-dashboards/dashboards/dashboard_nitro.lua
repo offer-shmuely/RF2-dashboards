@@ -22,9 +22,11 @@ local statusbar = arg[5]
 local inSimu = arg[6]
 
 -- better font size names
-local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 local lvSCALE = lvgl.LCD_SCALE or 1
 local is800 = (LCD_W==800)
+
+local lvgl2 = { RGB=lcd.RGB }
 
 local lib_blackbox_horz = assert(loadScript(baseDir .. "/parts/blackbox_horz.lua", "btd"))()
 
@@ -42,7 +44,7 @@ M.build_ui = function(wgt)
     lvgl.clear()
 
     -- global
-    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lcd.RGB(0x111111), filled=true})
+    lvgl.rectangle({x=0, y=0, w=LCD_W, h=LCD_H, color=lvgl2.RGB(0x111111), filled=true})
 
     -- top bar
     lvgl.box({x=0, y=0, w=LCD_W*lvSCALE, h=40*lvSCALE, visible=function() return wgt.isNeedTopbar end,
@@ -72,8 +74,8 @@ M.build_ui = function(wgt)
         }
     })
 
-    -- batt profile
-    -- pMain:box({x=86, y=0,
+    -- battery profile
+    -- pMain:box({x=86*lvSCALE, y=0,
     --     children={
     --         {type="label", text="Batt", x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
     --         {type="label", text=function() return "1" end , x=2, y=10, font=FS.FONT_16 ,color=txtColor},
@@ -83,10 +85,10 @@ M.build_ui = function(wgt)
     -- RX Battery
     local bVolt = pMain:box({x=5*lvSCALE, y=100*lvSCALE})
     bVolt:label({text="RX Battery", x=0, y=0, font=FS.FONT_6, color=titleGreyColor})
-    bVolt:label({text=function() return string.format("%.02fv", wgt.values.v_rx) end , x=0, y=12*lvSCALE, font=FS.FONT_16 ,color=txtColor})
+    bVolt:label({text=function() return string.format("%.02fv", wgt.values.vbec) end , x=0, y=12*lvSCALE, font=FS.FONT_16 ,color=txtColor})
     lib_blackbox_horz.build_ui(bVolt, wgt,
         {x=0, y=48*lvSCALE,w=110*lvSCALE,h=25*lvSCALE,segments_w=20, color=WHITE, bg_color=GREY, cath_w=10, cath_h=8, segments_h=20, cath=true, fence_thickness=1},
-        function(wgt) return wgt.values.v_rx_percent end,
+        function(wgt) return wgt.values.vbec_percent end,
         function(wgt) return wgt.values.cellColor end
     )
 
@@ -131,7 +133,7 @@ M.build_ui = function(wgt)
             {type="rectangle", x=6*lvSCALE, y=isizeh-25*lvSCALE, w=isizew-20, h=20*lvSCALE, filled=true, rounded=8, color=DARKGREY, opacity=200},
             {type="label", text=function() return wgt.values.craft_name end,  x=15*lvSCALE, y=isizeh-25*lvSCALE, font=FS.FONT_8 ,color=txtColor},
             -- flights count
-            {type="label", text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end , x=8*lvSCALE, y=isizeh+10*lvSCALE, font=FS.FONT_8, color=lcd.RGB(0x999999)},
+            {type="label", text=function() return string.format("%s Flights", wgt.values.model_total_flights or "000") end , x=8*lvSCALE, y=isizeh+10*lvSCALE, font=FS.FONT_8, color=lvgl2.RGB(0x999999)},
     }})
 
 
@@ -163,14 +165,14 @@ M.build_ui = function(wgt)
     -- app_ver
     pMain:box({x=LCD_W -46*lvSCALE, y=LCD_H -82*lvSCALE,
         children={
-            {type="label", text=function() return string.format("v%s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lcd.RGB(0x999999)},
+            {type="label", text=function() return string.format("v%s", wgt.app_ver) end , x=0, y=0, font=FS.FONT_6 ,color=lvgl2.RGB(0x999999)},
         }
     })
 
     -- status bar
     wgt.statusbar.init(wgt, "Shmuely", {
         {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%",         wgt.values.link_rqly,   wgt.values.link_rqly_min) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.link_rqly  },
-        {name="RxBat-:",ftxt=function() return string.format("RxBat: %0.1f/%0.1fV", wgt.values.v_rx,        wgt.values.v_rx_min     ) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.rx_voltage },
+        {name="RxBat-:",ftxt=function() return string.format("RxBat: %0.2f/%0.2fV", wgt.values.vbec,        wgt.values.vbec_min     ) end, color=GREEN, sensor=wgt.tlmEngine.sensorTable.vbec },
         {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smw",         wgt.values.link_tx_power_max                    ) end, sensor=wgt.tlmEngine.sensorTable.link_tx_power},
         {name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end, sensor=wgt.tlmEngine.sensorTable.throttle_percent},
     })

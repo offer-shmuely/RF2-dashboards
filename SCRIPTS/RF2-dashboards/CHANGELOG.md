@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## next
 
+## [2.2.21] - 2026-09
+
+### Added
+- Fancy dashboard: new sensor cards status area on mk3 (cards that turn orange/red on warning/alert)
+- ESC temp and min cell voltage in the Fancy status bar/area
+
+### Changed
+- Fancy & Modern dashboards: layout and gauge refresh
+- Thicker gauges on mk3 screens
+- RF2 Server widget: new look
+
+### Fixed
+- Post-flight minimums no longer drop to 0 on momentary zero readings
+
+
 ## [2.2.20] - 2026-06
 
 ### Added

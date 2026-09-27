@@ -4,9 +4,11 @@ local app_name = args[2]
 local tools = args[3]
 
 -- better font size names
-local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+local FS={FONT_38=XXLSIZE,FONT_24=XLSIZE, FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 local lvSCALE = lvgl.LCD_SCALE or 1
 local is800 = (LCD_W==800)
+
+local lvgl2 = { RGB=lcd.RGB }
 
 local values_elements_array = {
     --  {name="abc", value_func=f, units="%", x=0, width=60, full_txt=""}
@@ -32,9 +34,9 @@ local function separator_width()
     return ts_w2
 end
 
-M.init = function(wgt, dev, elem_list)
+M.init = function(wgt, dev_n, elem_list)
     log("lib_statusbar init()")
-    dev_name = dev
+    dev_name = dev_n
     values_elements_array = {}
 
     for i, elem in pairs(elem_list) do
@@ -118,7 +120,7 @@ M.build_ui = function(parentBox, wgt)
     sb_h = sb_h + 7
     status_bar_height = sb_h
     local bStatusBar = parentBox:box({x=0, y=wgt.zone.h-wgt.selfTopbarHeight*lvSCALE-sb_h})
-    local statusBarColor = lcd.RGB(0x0078D4)
+    local statusBarColor = lvgl2.RGB(0x0078D4)
 
     bStatusBar:rectangle({x=0, y=0, w=wgt.zone.w, h=sb_h, color=statusBarColor, filled=true})
 
